@@ -1,0 +1,37 @@
+2025-11-16 17:23:01,013 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:23:01,014 | INFO | Dataset=gsm8k/main split=test max_samples=50 batch_size=1
+2025-11-16 17:23:01,014 | INFO | Setup verified. Exiting because --setup-only was set.
+2025-11-16 17:27:41,895 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:27:41,896 | INFO | Dataset=gsm8k/main split=test max_samples=50 batch_size=1
+2025-11-16 17:27:41,896 | INFO | Setup verified. Exiting because --setup-only was set.
+2025-11-16 17:29:48,900 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:29:48,900 | INFO | Dataset=gsm8k/main split=test max_samples=10 batch_size=1
+2025-11-16 17:29:58,944 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebabec0>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: 2f7bf169-1cd8-48a8-8f82-337e21db9bd6)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:29:58,944 | WARNING | Retrying in 1s [Retry 1/5].
+2025-11-16 17:30:09,988 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebabc80>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: a0b58220-7923-4420-9da0-b1f23d850baa)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:30:09,988 | WARNING | Retrying in 2s [Retry 2/5].
+2025-11-16 17:30:22,032 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebf85f0>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: 38e6d7e8-0b79-4827-a4fa-f57fe08abb37)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:30:22,032 | WARNING | Retrying in 4s [Retry 3/5].
+2025-11-16 17:30:36,073 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebf80b0>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: 01611ba2-6f97-401d-95f2-38216928209a)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:30:36,073 | WARNING | Retrying in 8s [Retry 4/5].
+2025-11-16 17:30:54,114 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebf83b0>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: f407a9cd-f6ef-488f-928f-51dd0725242e)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:30:54,114 | WARNING | Retrying in 8s [Retry 5/5].
+2025-11-16 17:31:12,158 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f958ebf8fe0>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: 372fe11c-dff3-4a43-b527-04f40b22a237)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:35:03,591 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:35:03,592 | INFO | Dataset=gsm8k/main split=test max_samples=10 batch_size=1
+2025-11-16 17:38:27,185 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:38:27,186 | INFO | Dataset=gsm8k/main split=test max_samples=50 batch_size=1
+2025-11-16 17:38:27,186 | INFO | Setup verified. Exiting because --setup-only was set.
+2025-11-16 17:38:37,313 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:38:37,314 | INFO | Dataset=gsm8k/main split=test max_samples=50 batch_size=1
+2025-11-16 17:38:37,314 | INFO | Setup verified. Exiting because --setup-only was set.
+2025-11-16 17:40:20,213 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:40:20,214 | INFO | Dataset=gsm8k/main split=test max_samples=10 batch_size=1
+2025-11-16 17:42:22,910 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:42:22,910 | INFO | Dataset=gsm8k/main split=test max_samples=10 batch_size=1
+2025-11-16 17:42:33,050 | WARNING | '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /datasets/gsm8k/resolve/main/README.md (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7fb0b86fde80>, 'Connection to huggingface.co timed out. (connect timeout=10)'))"), '(Request ID: 175db27c-457b-4b05-adbd-24272449dc67)')' thrown while requesting HEAD https://huggingface.co/datasets/gsm8k/resolve/main/README.md
+2025-11-16 17:42:33,050 | WARNING | Retrying in 1s [Retry 1/5].
+2025-11-16 17:42:47,205 | INFO | Starting evaluation with model=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
+2025-11-16 17:42:47,205 | INFO | Dataset=gsm8k/main split=test max_samples=10 batch_size=1
+2025-11-16 17:42:56,910 | INFO | We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2025-11-16 17:49:53,288 | INFO | Evaluated 10 samples. Comparable answers: 10. Accuracy: 40.00%.
