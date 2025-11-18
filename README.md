@@ -1,76 +1,43 @@
-# GSM8K Hidden-State Rethink Analysis
+# Rethink Debugger
 
-This repository now focuses on probing **token-level hidden states** while a Meta-Llama-3 8B Instruct checkpoint solves GSM8K questions. The refreshed `rethink_run.py` workflow:
+Prototype toolkit for capturing per-token statistics from reasoning models and contrasting teacher-forced traces with free-form generations.
 
-1. Fetches a GSM8K test sample (defaults to the very first item) and renders the prompt template in `prompts/gsm8k_prompt.txt`.
-2. Runs the model autoregressively and records every newly generated token's probability, top-k alternatives, and per-layer hidden-state norms.
-3. Performs a teacher-forced pass over the ground-truth answer to compute token probabilities, entropy, and similarity between answer states and the prompt context.
-4. Saves a structured JSON report plus optional visualizations (heatmaps/curves) so you can inspect when the model stays on a “trustworthy” trajectory.
-
-The intent is to validate that the model can still reason end-to-end while exposing enough intermediate signals to decide whether a token (or group of tokens) helps the solution, mimicking a reflection or debugging loop.
-
-## Prerequisites
+## Quick Start
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+bash run.sh
 ```
 
-> **Note:** You must have accepted the GSM8K dataset terms on Hugging Face. If the official endpoint is slow, export `HF_ENDPOINT=https://hf-mirror.com` (already the default in the helper script).
+- `run.sh` now defaults to the local `/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct` checkpoint, so no model download is required on this machine. Override it with `MODEL_NAME=... bash run.sh` if you want a different repo or path.
+- `run_rethink.py` exposes the full set of knobs (dataset slice, token limits, logging, etc.). Use `python run_rethink.py --help` to discover every option.
 
-## Running the analysis
+## Cached datasets & offline-friendly runs
 
-The easiest entrypoint is the shell helper:
+- GSM8K already lives at `~/.cache/huggingface/datasets/gsm8k/main/0.0.0/...`. The runner always tries the cache first and only hits the network if that fails. Pass `--local-files-only` (or export `HF_DATASETS_OFFLINE=1`) to enforce cache-only behavior:
 
 ```bash
-# Optional overrides before running
-export MODEL_PATH=/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct
-export DATASET_INDEX=0            # focus on gsm8k test[0]
-export OUTPUT_DIR=outputs/analysis/gsm8k_0
-
-bash run_rethink.sh              # adds --visualize by default
+HF_DATASETS_OFFLINE=1 python run_rethink.py --local-files-only --limit 2 --setup-only
 ```
 
-Or call the Python CLI directly:
+- If the cache is missing, the script automatically retries online; provide `--use-auth-token <HF_TOKEN>` when GSM8K access requires authentication.
+- To route online fetches through a mirror, export `HF_ENDPOINT=https://hf-mirror.com` before invoking `run.sh` or `run_rethink.py`.
+- Additional dataset knobs (`--dataset-name`, `--dataset-config`, `--split`) let you point at alternative corpora without touching the code.
+
+## Logs and structured outputs
+
+- Every run produces a stem of the form `<model_name>_<dataset_name>_run` (slashes stripped). Logs and summaries are emitted to `outputs/<stem>.log` and `outputs/<stem>.json` by default. Override the stem with `--run-name custom_tag`, or override individual paths via `--log-file` / `--output`.
+- The JSON file contains metadata (model, dataset, token caps, device, timestamp) plus the per-example traces so you can diff experiments offline.
+- Use `--setup-only` to quickly verify dataset/cache/log paths without instantiating the model—handy when testing configuration changes.
+
+Example manual invocation with explicit naming:
 
 ```bash
-python rethink_run.py \
-  --model-path /root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct \
-  --prompt-file prompts/gsm8k_prompt.txt \
-  --dataset-name gsm8k --dataset-config main --dataset-split test --dataset-index 0 \
-  --max-new-tokens 96 --top-k 5 --visualize
+python run_rethink.py \
+	--model-name /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct \
+	--limit 5 \
+	--run-name llama31_gsm8k_debug \
+	--local-files-only
 ```
-
-Key switches:
-
-- `--dataset-index` – pick which GSM8K test item to inspect.
-- `--max-new-tokens` – how many tokens to let the model produce before stopping.
-- `--top-k` – number of alternative tokens to log per decoding step.
-- `--visualize` – save `layer_norm_heatmap.png` and `reference_probabilities.png` next to the JSON report.
-
-All logs land in `<output_dir>/analysis.log`, the JSON report in `<output_dir>/token_analysis.json`, and optional PNGs in the same directory.
-
-## Output anatomy
-
-`token_analysis.json` includes:
-
-- `generated_tokens`: probability, entropy, per-layer norm vector, and competing tokens for every generated token.
-- `reference_tokens`: teacher-forced probabilities plus cosine similarity between each answer token's hidden state and the averaged prompt state (useful for gauging how much the answer “sticks” to the question context).
-
-These stats align with the four guiding goals:
-
-1. **Normal reasoning** – you can still read the final answer text.
-2. **Per-token probabilities** – mirrors the `entropy.py` idea but bundled in the report.
-3. **Hidden-state correlations** – norms and cosine similarities highlight when layers diverge.
-4. **Visualization-ready cache** – heatmaps make it easy to eyeball the layers or steps worth “restarting” from if you later build a controller.
-
-## Relationship to the `rethink` package
-
-The lower-level `rethink/` modules are unchanged: adapters cache arbitrary layers, expose detokenization utilities, and contain scoring hooks for future confidence-driven rewind policies. The new CLI simply assembles these pieces into a GSM8K-focused probe so you can iterate on reflection strategies quickly.
-
-### Quick smoke tests
-
-```bash
-python -m unittest tests/test_rethink.py
-```
-
-Use the tests after editing any core components to ensure the cache/controller plumbing remains intact.
