@@ -2,29 +2,48 @@
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")" && pwd)
-PROMPT=${PROMPT:-"Solve 12 * 13."}
+
+# Core model / analysis defaults
 MODEL_PATH=${MODEL_PATH:-"/root/autodl-fs/LLM-Research/Meta-Llama-3___1-8B-Instruct"}
-MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-128}
-TEMPERATURE=${TEMPERATURE:-0.2}
-TOP_P=${TOP_P:-0.95}
-CAPTURE_LAYERS=${CAPTURE_LAYERS:-"8,16,24"}
-CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.8}
-LOG_FILE=${LOG_FILE:-"outputs/rethink_run.log"}
-OUTPUT_JSON=${OUTPUT_JSON:-"outputs/rethink_run.json"}
+MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-96}
 TORCH_DTYPE=${TORCH_DTYPE:-float16}
 DEVICE=${DEVICE:-}
+HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 
+# Dataset parameters (focus on gsm8k test[0])
+DATASET_NAME=${DATASET_NAME:-gsm8k}
+DATASET_CONFIG=${DATASET_CONFIG:-main}
+DATASET_SPLIT=${DATASET_SPLIT:-test}
+DATASET_INDEX=${DATASET_INDEX:-0}
+QUESTION_FIELD=${QUESTION_FIELD:-question}
+ANSWER_FIELD=${ANSWER_FIELD:-answer}
+PROMPT_FILE=${PROMPT_FILE:-prompts/gsm8k_prompt.txt}
+
+# Analysis output controls
+OUTPUT_DIR=${OUTPUT_DIR:-"outputs/analysis/gsm8k_${DATASET_INDEX}"}
+VISUALIZE=${VISUALIZE:-1}
+TOP_K=${TOP_K:-5}
+
+# Build command ---------------------------------------------------------------
 cd "$REPO_ROOT"
-CMD=(python rethink_run.py "$PROMPT" \
+CMD=(python rethink_run.py \
     --model-path "$MODEL_PATH" \
     --max-new-tokens "$MAX_NEW_TOKENS" \
-    --temperature "$TEMPERATURE" \
-    --top-p "$TOP_P" \
-    --capture-layers "$CAPTURE_LAYERS" \
-    --confidence-threshold "$CONFIDENCE_THRESHOLD" \
-    --log-file "$LOG_FILE" \
-    --output-json "$OUTPUT_JSON" \
-    --torch-dtype "$TORCH_DTYPE")
+    --dataset-name "$DATASET_NAME" \
+    --dataset-config "$DATASET_CONFIG" \
+    --dataset-split "$DATASET_SPLIT" \
+    --dataset-index "$DATASET_INDEX" \
+    --question-field "$QUESTION_FIELD" \
+    --answer-field "$ANSWER_FIELD" \
+    --prompt-file "$PROMPT_FILE" \
+    --output-dir "$OUTPUT_DIR" \
+    --hf-endpoint "$HF_ENDPOINT" \
+    --torch-dtype "$TORCH_DTYPE" \
+    --top-k "$TOP_K")
+
+if [[ "$VISUALIZE" == "1" ]]; then
+    CMD+=(--visualize)
+fi
 
 if [[ -n "$DEVICE" ]]; then
     CMD+=(--device "$DEVICE")
