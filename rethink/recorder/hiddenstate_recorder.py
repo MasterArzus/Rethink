@@ -1,29 +1,9 @@
-"""Reusable hooks for collecting hidden states and token statistics."""
-
-from __future__ import annotations
-
+from typing import Dict, List, Optional, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Optional
-
 import torch
 
-
-@dataclass
-class TokenLogProb:
-    """Store log-probability metadata for a generated token."""
-
-    token: str
-    token_id: int
-    prob: float
-    log_prob: float
-    step: int
-    meta: Dict[str, float] = field(default_factory=dict)
-
-
 class HiddenStateRecorder:
-    """Forward hooks that capture hidden states during autoregressive decoding."""
-
+    '''Record a HiddenState during a inference in one layer in one token'''
     def __init__(self, layers: Optional[List[int]] = None, device: Optional[str] = None):
         self.layers = layers
         self.device = device
@@ -39,6 +19,7 @@ class HiddenStateRecorder:
                 return
             hidden_state = outputs[0] if isinstance(outputs, tuple) else outputs
             # clone the last token vector for lightweight storage
+            # Assuming we want to capture the last token's hidden state
             token_vec = hidden_state[:, -1, :].detach().to(self.device or "cpu").cpu()
             self.storage.setdefault(layer_idx, []).append(token_vec)
 
@@ -47,9 +28,12 @@ class HiddenStateRecorder:
     @contextmanager
     def attach(self, model) -> Iterator["HiddenStateRecorder"]:
         """Context manager that installs hooks and clears them afterwards."""
-
+        
+        # Try to find the transformer layers. This might need adjustment for different models.
+        # For Llama, it's usually model.model.layers
         transformer = getattr(getattr(model, "model", model), "layers", None)
         if transformer is None:
+            # Fallback or raise error
             raise RuntimeError("Model does not expose decoder layers via model.layers")
 
         self.storage.clear()

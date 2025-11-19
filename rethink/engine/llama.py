@@ -8,15 +8,16 @@ from typing import Dict, List, Optional
 import torch
 from transformers.models.llama.modeling_llama import LlamaForCausalLM
 
-from ..config import InstrumentationConfig
-from .hooks import HiddenStateRecorder, TokenLogProb
+from rethink.utils.config import InstrumentationConfig
+from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder
+from rethink.recorder.token_recorder import TokenRecorder
 
 
 @dataclass
 class TracePack:
     """Aggregate token-wise statistics and raw hidden states."""
 
-    token_logprobs: List[TokenLogProb]
+    token_logprobs: List[TokenRecorder]
     hidden_states: Dict[int, List[torch.Tensor]]
     extra: Dict[str, torch.Tensor]
 
@@ -48,7 +49,7 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
         target_ids = tokenizer(target, return_tensors="pt").input_ids.to(device)[0]
         generated_ids = prompt_ids.clone()
 
-        token_logs: List[TokenLogProb] = []
+        token_logs: List[TokenRecorder] = []
 
         with self._recorder.attach(self):
             for step, token_id in enumerate(target_ids.tolist()):
@@ -56,13 +57,17 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                 logits = outputs.logits[:, -1, :]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 prob = torch.exp(log_probs[0, token_id]).item()
+                
+                # Extract hidden states for this step
+                current_states = tuple(self._recorder.storage[l][-1] for l in sorted(self._recorder.storage.keys())) if self._recorder.storage else ()
+
                 token_logs.append(
-                    TokenLogProb(
-                        token=tokenizer.decode([token_id]),
-                        token_id=token_id,
-                        prob=prob,
-                        log_prob=log_probs[0, token_id].item(),
+                    TokenRecorder(
+                        idx=token_id,
                         step=step,
+                        token=tokenizer.decode([token_id]),
+                        prob=prob,
+                        statelist=current_states,
                     )
                 )
                 next_token = torch.tensor([[token_id]], device=device)
@@ -88,7 +93,7 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
         generation_kwargs = generation_kwargs or {"max_new_tokens": 128}
         device = self.device
         input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
-        token_logs: List[TokenLogProb] = []
+        token_logs: List[TokenRecorder] = []
 
         with self._recorder.attach(self):
             past_key_values = None
@@ -105,13 +110,17 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                 probs = torch.nn.functional.softmax(logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1)
                 token_id = next_token.item()
+                
+                # Extract hidden states for this step
+                current_states = tuple(self._recorder.storage[l][-1] for l in sorted(self._recorder.storage.keys())) if self._recorder.storage else ()
+
                 token_logs.append(
-                    TokenLogProb(
-                        token=tokenizer.decode([token_id]),
-                        token_id=token_id,
-                        prob=probs[0, token_id].item(),
-                        log_prob=torch.log(probs[0, token_id]).item(),
+                    TokenRecorder(
+                        idx=token_id,
                         step=step,
+                        token=tokenizer.decode([token_id]),
+                        prob=probs[0, token_id].item(),
+                        statelist=current_states,
                     )
                 )
                 generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)

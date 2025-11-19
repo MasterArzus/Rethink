@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import List, Optional
+from rethink.recorder.trace_recorder import TraceRecorder
 
 
 @dataclass
@@ -15,18 +16,9 @@ class BenchmarkExample:
 
 
 @dataclass
-class TokenTrace:
-    """Lightweight container for per-token statistics."""
-
-    tokens: List[str]
-    log_probs: List[float]
-    hidden_states_path: Optional[str] = None
-
-
-@dataclass
 class BenchmarkResult:
     """Pair traces for later comparison and visualization."""
 
     example: BenchmarkExample
-    reference_trace: Optional[TokenTrace]
-    model_trace: Optional[TokenTrace]
+    reference_trace: Optional[TraceRecorder]
+    model_trace: Optional[TraceRecorder]

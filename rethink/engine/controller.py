@@ -5,9 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from ..analysis import compare_traces
-from ..config import RethinkConfig
-from ..data import BenchmarkExample, BenchmarkResult, TokenTrace
+from rethink.analysis.trace_analysis import compare_traces
+from rethink.utils.config import RethinkConfig
+from dataset.benchmark import BenchmarkExample, BenchmarkResult
+from rethink.recorder.trace_recorder import TraceRecorder
 
 
 @dataclass
@@ -26,10 +27,12 @@ class RethinkController:
         self.tokenizer = tokenizer
         self.cfg = cfg
 
-    def _tracepack_to_token_trace(self, tracepack) -> TokenTrace:
-        tokens = [log.token for log in tracepack.token_logprobs]
-        log_probs = [log.log_prob for log in tracepack.token_logprobs]
-        return TokenTrace(tokens=tokens, log_probs=log_probs, hidden_states_path=None)
+    def _tracepack_to_trace_recorder(self, tracepack, question: str, answer: str) -> TraceRecorder:
+        return TraceRecorder(
+            question=question,
+            answer=answer,
+            tokenlist=tracepack.token_logprobs
+        )
 
     def run_single_example(self, example: BenchmarkExample, generation_kwargs: Optional[dict] = None) -> ControllerArtifacts:
         """Execute both teacher-forced and free-form traces for one example."""
@@ -46,8 +49,13 @@ class RethinkController:
             generation_kwargs=generation_kwargs,
         )
 
-        reference_trace = self._tracepack_to_token_trace(reference_pack)
-        hypothesis_trace = self._tracepack_to_token_trace(hypothesis_pack)
+        reference_trace = self._tracepack_to_trace_recorder(reference_pack, example.question, example.correct_answer)
+        hypothesis_trace = self._tracepack_to_trace_recorder(hypothesis_pack, example.question, example.correct_answer) # Answer might be different for hypothesis, but TraceRecorder structure assumes 'answer' field. Maybe it means 'target answer' or 'generated answer'?
+        # The user's TraceRecorder has 'answer'. I'll assume it's the generated answer for hypothesis.
+        # But hypothesis_pack doesn't explicitly store the full generated text as a string, only tokens.
+        # I'll reconstruct it.
+        hypothesis_answer = "".join([t.token for t in hypothesis_pack.token_logprobs])
+        hypothesis_trace.answer = hypothesis_answer
 
         benchmark_result = BenchmarkResult(
             example=example,

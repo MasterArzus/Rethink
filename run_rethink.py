@@ -16,10 +16,11 @@ import torch
 from datasets import DownloadConfig, load_dataset
 from transformers import AutoTokenizer
 
-from rethink.config import DatasetSlice, InstrumentationConfig, RethinkConfig
-from rethink.data import BenchmarkExample, load_gsm8k_slice
-from rethink.instrumentation import InstrumentedLlamaForCausalLM
-from rethink.pipeline import RethinkController
+from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig
+from dataset.benchmark import BenchmarkExample
+from dataset.gsm8k import load_gsm8k_slice
+from rethink.engine.llama import InstrumentedLlamaForCausalLM
+from rethink.engine.controller import RethinkController
 
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -123,8 +124,8 @@ def summarize_run(example: BenchmarkExample, controller_artifacts) -> dict:
 	summary = {
 		"question": example.question,
 		"reference_answer": example.correct_answer,
-		"teacher_forced_tokens": list(ref.tokens),
-		"model_tokens": list(hyp.tokens),
+		"teacher_forced_tokens": [t.token for t in ref.tokenlist],
+		"model_tokens": [t.token for t in hyp.tokenlist],
 		"probability_gap": [delta.prob_gap for delta in report.token_deltas],
 		"flagged_spans": list(report.flagged_spans),
 	}

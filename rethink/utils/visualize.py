@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .structures import DivergenceReport
+from rethink.analysis.trace_analysis import DivergenceReport
 
 
 def render_prob_trajectory(report: DivergenceReport) -> None:

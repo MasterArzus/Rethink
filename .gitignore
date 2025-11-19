@@ -17,3 +17,4 @@ build/
 .eggs/
 pip-wheel-metadata/
 __pycache__/
+dataset/gsm8k/
