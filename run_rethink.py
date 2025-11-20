@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import List
 
 import torch
-from datasets import DownloadConfig, load_dataset
+from datasets import DownloadConfig, load_dataset, load_from_disk
 from transformers import AutoTokenizer
 
 from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig
@@ -86,6 +86,20 @@ def load_benchmark_examples(
 	token: str | None,
 	local_files_only: bool,
 ) -> List[BenchmarkExample]:
+	# 1. Try loading from local disk (priority)
+	local_dataset_path = REPO_ROOT / "dataset" / name
+	if local_dataset_path.exists():
+		logging.info(f"Found local dataset at {local_dataset_path}, loading from disk.")
+		try:
+			dataset = load_from_disk(str(local_dataset_path))
+			if split in dataset:
+				dataset = dataset[split]
+			logging.info("Loaded dataset from local disk.")
+			return load_gsm8k_slice(dataset, limit=limit)
+		except Exception as e:
+			logging.warning(f"Failed to load from disk: {e}. Falling back to standard loading.")
+
+	# 2. Fallback to load_dataset (Hugging Face Hub or cache)
 	def _load(local_only: bool):
 		kwargs = build_dataset_kwargs(token, local_only)
 		return load_dataset(name, config, split=split, **kwargs)
@@ -102,7 +116,6 @@ def load_benchmark_examples(
 		except Exception as cache_err:
 			logging.warning("Cache load failed (%s). Falling back to online download.", cache_err)
 			dataset = _load(False)
-	return load_gsm8k_slice(dataset, limit=limit)
 	return load_gsm8k_slice(dataset, limit=limit)
 
 
@@ -121,13 +134,27 @@ def summarize_run(example: BenchmarkExample, controller_artifacts) -> dict:
 	ref = controller_artifacts.benchmark_result.reference_trace
 	hyp = controller_artifacts.benchmark_result.model_trace
 	report = controller_artifacts.divergence_report
+	
+	# Convert Interval objects to dicts for JSON serialization
+	critical_intervals = []
+	if hasattr(report, 'critical_intervals'):
+		for interval in report.critical_intervals:
+			critical_intervals.append({
+				"start": interval.start,
+				"end": interval.end,
+				"type": interval.type,
+				"score": interval.score,
+				"description": interval.description
+			})
+	
 	summary = {
 		"question": example.question,
 		"reference_answer": example.correct_answer,
+		"model_answer": hyp.answer,
 		"teacher_forced_tokens": [t.token for t in ref.tokenlist],
 		"model_tokens": [t.token for t in hyp.tokenlist],
-		"probability_gap": [delta.prob_gap for delta in report.token_deltas],
-		"flagged_spans": list(report.flagged_spans),
+		"critical_intervals": critical_intervals,
+		"divergence_index": report.divergence_index if hasattr(report, 'divergence_index') else None,
 	}
 	return summary
 
@@ -244,8 +271,9 @@ def main() -> None:
 		print(summary["teacher_forced_tokens"][:20], "...")
 		print("\n--- Model Generated Tokens ---")
 		print(summary["model_tokens"][:20], "...")
-		print("\n--- Flagged Spans (step indices) ---")
-		print(summary["flagged_spans"])
+		print("\n--- Critical Intervals ---")
+		for interval in summary["critical_intervals"]:
+			print(f"  [{interval['start']}:{interval['end']}] {interval['type']} - {interval['description']}")
 
 	payload = build_run_report(args, device_str, run_name, log_path, output_path, summaries)
 	write_run_report(output_path, payload)
