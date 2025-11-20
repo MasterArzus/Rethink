@@ -63,6 +63,15 @@ def compare_traces(reference: TraceRecorder, hypothesis: TraceRecorder, hidden_s
             )
         )
 
+    # Use the hidden states from the recorders if available, otherwise fallback to the passed hidden_states dict
+    # Note: The passed hidden_states dict is legacy from when we returned it separately in TracePack
+    # Now TraceRecorder has it inside TokenRecorders.
+    
+    # Let's try to compare layer 0 as a sample if available
+    # This is just a placeholder logic for layer comparison
+    # In a real scenario, we would iterate over common layers
+    
+    # For now, we keep the old logic if hidden_states is passed, but we should probably update it to use TraceRecorder data
     if hidden_states:
         for layer_idx, states in hidden_states.items():
             if len(states) < 2:

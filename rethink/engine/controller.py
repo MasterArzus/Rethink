@@ -31,7 +31,8 @@ class RethinkController:
         return TraceRecorder(
             question=question,
             answer=answer,
-            tokenlist=tracepack.token_logprobs
+            tokenlist=tracepack.token_logprobs,
+            metadata={"extra": tracepack.extra}
         )
 
     def run_single_example(self, example: BenchmarkExample, generation_kwargs: Optional[dict] = None) -> ControllerArtifacts:

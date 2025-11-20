@@ -2,8 +2,29 @@ from typing import Dict, List, Optional, Iterator
 from contextlib import contextmanager
 import torch
 
+class HiddenState:
+    '''
+    Data structure representing the hidden state of a single layer for a single token.
+    '''
+    def __init__(self, layer_idx: int, value: torch.Tensor):
+        self.layer_idx = layer_idx
+        self.value = value  # Expected shape: (hidden_dim,) or (1, hidden_dim)
+
+    def get_value(self) -> torch.Tensor:
+        return self.value
+
+    def to(self, device: str):
+        self.value = self.value.to(device)
+        return self
+
+    def __repr__(self):
+        return f"HiddenState(layer={self.layer_idx}, shape={self.value.shape})"
+
+
 class HiddenStateRecorder:
-    '''Record a HiddenState during a inference in one layer in one token'''
+    '''
+    Collector that attaches to the model to capture hidden states during inference.
+    '''
     def __init__(self, layers: Optional[List[int]] = None, device: Optional[str] = None):
         self.layers = layers
         self.device = device

@@ -9,7 +9,7 @@ import torch
 from transformers.models.llama.modeling_llama import LlamaForCausalLM
 
 from rethink.utils.config import InstrumentationConfig
-from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder
+from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder, HiddenState
 from rethink.recorder.token_recorder import TokenRecorder
 
 
@@ -59,7 +59,11 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                 prob = torch.exp(log_probs[0, token_id]).item()
                 
                 # Extract hidden states for this step
-                current_states = tuple(self._recorder.storage[l][-1] for l in sorted(self._recorder.storage.keys())) if self._recorder.storage else ()
+                current_states = {}
+                if self._recorder.storage:
+                    for l, states in self._recorder.storage.items():
+                        if states:
+                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
 
                 token_logs.append(
                     TokenRecorder(
@@ -67,7 +71,8 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                         step=step,
                         token=tokenizer.decode([token_id]),
                         prob=prob,
-                        statelist=current_states,
+                        log_prob=log_probs[0, token_id].item(),
+                        hidden_states=current_states,
                     )
                 )
                 next_token = torch.tensor([[token_id]], device=device)
@@ -112,7 +117,11 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                 token_id = next_token.item()
                 
                 # Extract hidden states for this step
-                current_states = tuple(self._recorder.storage[l][-1] for l in sorted(self._recorder.storage.keys())) if self._recorder.storage else ()
+                current_states = {}
+                if self._recorder.storage:
+                    for l, states in self._recorder.storage.items():
+                        if states:
+                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
 
                 token_logs.append(
                     TokenRecorder(
@@ -120,7 +129,8 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                         step=step,
                         token=tokenizer.decode([token_id]),
                         prob=probs[0, token_id].item(),
-                        statelist=current_states,
+                        log_prob=torch.log(probs[0, token_id]).item(),
+                        hidden_states=current_states,
                     )
                 )
                 generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
