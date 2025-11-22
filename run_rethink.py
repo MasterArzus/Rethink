@@ -19,7 +19,7 @@ from transformers import AutoTokenizer
 from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig
 from dataset.benchmark import BenchmarkExample
 from dataset.gsm8k import load_gsm8k_slice
-from rethink.engine.llama import InstrumentedLlamaForCausalLM
+from rethink.engine.llama import RethinkLlamaForCausalLM
 from rethink.engine.controller import RethinkController
 
 
@@ -124,7 +124,7 @@ def prepare_model(model_name: str, device: torch.device) -> tuple:
 	tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token is None else tokenizer.pad_token
 	tokenizer.padding_side = "left"
 
-	model = InstrumentedLlamaForCausalLM.from_pretrained(model_name)
+	model = RethinkLlamaForCausalLM.from_pretrained(model_name)
 	model.to(device)
 	model.eval()
 	return tokenizer, model

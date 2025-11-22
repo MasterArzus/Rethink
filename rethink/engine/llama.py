@@ -22,7 +22,7 @@ class TracePack:
     extra: Dict[str, torch.Tensor]
 
 
-class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
+class RethinkLlamaForCausalLM(LlamaForCausalLM):
     """Thin extension that records per-token metadata during decoding."""
 
     def __init__(self, config, instrumentation_cfg: Optional[InstrumentationConfig] = None):
@@ -134,8 +134,14 @@ class InstrumentedLlamaForCausalLM(LlamaForCausalLM):
                     )
                 )
                 generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
-                if generation_kwargs.get("eos_token_id") is not None and token_id == generation_kwargs["eos_token_id"]:
-                    break
+                
+                # Check for stop conditions
+                eos_token_id = generation_kwargs.get("eos_token_id")
+                if eos_token_id is not None:
+                    if isinstance(eos_token_id, int) and token_id == eos_token_id:
+                        break
+                    elif isinstance(eos_token_id, (list, tuple)) and token_id in eos_token_id:
+                        break
 
         return TracePack(
             token_logprobs=token_logs,

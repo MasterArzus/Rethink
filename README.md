@@ -41,3 +41,7 @@ python run_rethink.py \
 	--run-name llama31_gsm8k_debug \
 	--local-files-only
 ```
+## Use app
+```bash
+streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+```

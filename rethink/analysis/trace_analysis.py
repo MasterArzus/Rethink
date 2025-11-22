@@ -148,6 +148,37 @@ class TraceAnalysis:
             token_metrics=token_metrics
         )
 
+    def get_token_alternatives(self, token_index: int, k: int = 5) -> Dict[str, Any]:
+        """
+        Get the top-k alternative tokens for a specific position.
+        Uses the last layer's hidden state to decode logits.
+        """
+        if token_index < 0 or token_index >= len(self.trace.tokenlist):
+            return {}
+            
+        token_rec = self.trace.tokenlist[token_index]
+        token_analyzer = TokenAnalysis(token_rec, self.model, self.tokenizer)
+        
+        # Use the last available layer
+        if not token_rec.hidden_states:
+            return {}
+            
+        last_layer = max(token_rec.hidden_states.keys())
+        
+        # Get analysis for this layer
+        hs_analysis = token_analyzer._get_analysis(last_layer)
+        if not hs_analysis:
+            return {}
+            
+        top_k = hs_analysis.decode(k=k)
+        entropy = hs_analysis.compute_entropy()
+        
+        return {
+            "top_k": top_k,
+            "entropy": entropy,
+            "layer": last_layer
+        }
+
 # Legacy function wrapper for backward compatibility if needed
 def compare_traces(reference: TraceRecorder, hypothesis: TraceRecorder, hidden_states: Dict[int, List[torch.Tensor]] | None = None) -> Any:
     """Legacy wrapper: Use TraceAnalysis class instead."""
