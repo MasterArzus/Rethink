@@ -21,7 +21,31 @@ st.title("Rethink: Interactive LLM Debugging")
 
 # Sidebar for Configuration
 st.sidebar.header("Configuration")
-model_path = st.sidebar.text_input("Model Path", value="/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct")
+
+# Model Selection Logic
+base_model_dir = "/root/autodl-fs/LLM-Research/"
+available_models = []
+if os.path.exists(base_model_dir):
+    available_models = [d for d in os.listdir(base_model_dir) if os.path.isdir(os.path.join(base_model_dir, d))]
+
+# Default to Llama if available, else first one
+default_index = 0
+for i, m in enumerate(available_models):
+    if "Llama-3.1-8B-Instruct" in m:
+        default_index = i
+        break
+
+selected_model_name = st.sidebar.selectbox(
+    "Select Model", 
+    options=available_models + ["Custom Path"], 
+    index=default_index if available_models else 0
+)
+
+if selected_model_name == "Custom Path":
+    model_path = st.sidebar.text_input("Custom Model Path", value="/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct")
+else:
+    model_path = os.path.join(base_model_dir, selected_model_name)
+
 max_new_tokens = st.sidebar.slider("Max New Tokens", min_value=16, max_value=512, value=128, step=16)
 use_template = st.sidebar.checkbox("Use GSM8K Template", value=True, help="Wrap input in the standard GSM8K system prompt and format.")
 
@@ -44,10 +68,10 @@ if 'interactive_session' in st.session_state:
     st.header("Input Prompt")
     if use_template:
         input_label = "Question (will be wrapped in template)"
-        default_prompt = "Natalia sold 48 clips to her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?"
+        default_prompt = "How many clips did Jack sell all together in April and May, if Jack sold 48 clips to his friends in April, and then he sold half as many clips in May. "
     else:
         input_label = "Full Prompt (Raw Input)"
-        default_prompt = "Question: Natalia sold 48 clips to her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?\nAnswer:"
+        default_prompt = "Question: Jack sold 48 clips to his friends in April, and then he sold half as many clips in May.  How many clips did Jack sell all together in April and May?\nAnswer:"
         
     prompt = st.text_area(input_label, value=default_prompt, height=150)
     

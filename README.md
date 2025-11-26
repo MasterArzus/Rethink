@@ -45,3 +45,9 @@ python run_rethink.py \
 ```bash
 streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
+
+## Model 
+```sh
+/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct
+/root/autodl-fs/deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+```

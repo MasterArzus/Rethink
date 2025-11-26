@@ -160,7 +160,7 @@ else
     echo "Source: ModelScope selected."
 
     # 3a. 定义 ModelScope 模型列表
-    MODEL_LIST="LLM-Research/Meta-Llama-3.1-8B-Instruct"
+    MODEL_LIST="LLM-Research/Meta-Llama-3.1-8B-Instruct deepseek-ai/DeepSeek-R1-Distill-Llama-8B Qwen/Qwen3-8B"
     # 您可以添加更多模型，用空格隔开:
     # MODEL_LIST="model1 model2 model3"
 

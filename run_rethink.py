@@ -14,12 +14,13 @@ from typing import List
 
 import torch
 from datasets import DownloadConfig, load_dataset, load_from_disk
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoConfig
 
 from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig
 from dataset.benchmark import BenchmarkExample
 from dataset.gsm8k import load_gsm8k_slice
 from rethink.engine.llama import RethinkLlamaForCausalLM
+from rethink.engine.qwen import RethinkQwenForCausalLM
 from rethink.engine.controller import RethinkController
 
 
@@ -124,7 +125,22 @@ def prepare_model(model_name: str, device: torch.device) -> tuple:
 	tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token is None else tokenizer.pad_token
 	tokenizer.padding_side = "left"
 
-	model = RethinkLlamaForCausalLM.from_pretrained(model_name)
+	# Detect model architecture
+	config = AutoConfig.from_pretrained(model_name)
+	architectures = config.architectures if config.architectures else []
+	
+	model_class = None
+	if "LlamaForCausalLM" in architectures:
+		model_class = RethinkLlamaForCausalLM
+	elif "Qwen2ForCausalLM" in architectures:
+		model_class = RethinkQwenForCausalLM
+	else:
+		logging.warning(f"Architecture {architectures} not explicitly supported. Trying Llama fallback.")
+		model_class = RethinkLlamaForCausalLM
+
+	logging.info(f"Selected model class: {model_class.__name__}")
+
+	model = model_class.from_pretrained(model_name)
 	model.to(device)
 	model.eval()
 	return tokenizer, model
