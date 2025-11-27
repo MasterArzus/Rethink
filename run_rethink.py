@@ -16,7 +16,7 @@ import torch
 from datasets import DownloadConfig, load_dataset, load_from_disk
 from transformers import AutoTokenizer, AutoConfig
 
-from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig
+from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig, GenerationConfig, ModelConfig, PromptConfig
 from dataset.benchmark import BenchmarkExample
 from dataset.gsm8k import load_gsm8k_slice
 from rethink.engine.llama import RethinkLlamaForCausalLM
@@ -33,13 +33,16 @@ def parse_args() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="Run rethink debugger over GSM8K")
 	parser.add_argument(
 		"--model-name",
-		default="hf-internal-testing/tiny-random-LlamaForCausalLM",
-		help="HF repo id or local path to the base model",
+		default=None,
+		help="HF repo id or local path to the base model (overrides config)",
 	)
+	parser.add_argument("--model-config", default=None, help="Path to model config yaml")
 	parser.add_argument("--device", default=None, help="Override torch device (cpu|cuda)")
 	parser.add_argument("--limit", type=int, default=1, help="How many GSM8K samples to inspect")
 	parser.add_argument("--max-new-tokens", type=int, default=64, help="Decode cap for teacher forcing")
-	parser.add_argument("--generation-max-new-tokens", type=int, default=64, help="Decode cap for free generation")
+	parser.add_argument("--generation-max-new-tokens", type=int, default=None, help="Decode cap for free generation (overrides config)")
+	parser.add_argument("--generation-config", default=None, help="Path to generation config yaml")
+	parser.add_argument("--prompt-config", default=None, help="Path to prompt config yaml")
 	parser.add_argument("--output", default=None, help="Optional path to dump run summaries as JSON")
 	parser.add_argument("--dataset-name", default="gsm8k", help="HF dataset identifier")
 	parser.add_argument("--dataset-config", default="main", help="HF dataset config name")
@@ -54,6 +57,8 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument("--log-file", default=None, help="Optional path to write logs (defaults to outputs/<run>.log)")
 	parser.add_argument("--setup-only", action="store_true", help="Validate Dataset/model paths without running inference")
 	return parser.parse_args()
+
+
 
 
 def build_download_config(token: str | None, local_files_only: bool) -> DownloadConfig:
@@ -120,7 +125,8 @@ def load_benchmark_examples(
 	return load_gsm8k_slice(dataset, limit=limit)
 
 
-def prepare_model(model_name: str, device: torch.device) -> tuple:
+def prepare_model(model_config: ModelConfig, device: torch.device) -> tuple:
+	model_name = model_config.model_name_or_path
 	tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 	tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token is None else tokenizer.pad_token
 	tokenizer.padding_side = "left"
@@ -140,7 +146,11 @@ def prepare_model(model_name: str, device: torch.device) -> tuple:
 
 	logging.info(f"Selected model class: {model_class.__name__}")
 
-	model = model_class.from_pretrained(model_name)
+	model = model_class.from_pretrained(
+		model_name,
+		torch_dtype=getattr(torch, model_config.torch_dtype) if hasattr(torch, model_config.torch_dtype) else torch.float16,
+		attn_implementation=model_config.attn_implementation
+	)
 	model.to(device)
 	model.eval()
 	return tokenizer, model
@@ -261,20 +271,54 @@ def main() -> None:
 	)
 	dataset_slice = DatasetSlice(name=args.dataset_name, split=args.split, max_examples=args.limit)
 	instrumentation_cfg = InstrumentationConfig(max_tokens=args.max_new_tokens)
-	cfg = RethinkConfig(dataset=dataset_slice, instrumentation=instrumentation_cfg, device=device_str)
+	
+	# Load generation config
+	gen_config = GenerationConfig()
+	if args.generation_config:
+		gen_config = GenerationConfig.from_yaml(args.generation_config)
+	
+	if args.generation_max_new_tokens is not None:
+		gen_config.max_new_tokens = args.generation_max_new_tokens
+
+	# Load prompt config
+	prompt_config = PromptConfig()
+	if args.prompt_config:
+		prompt_config = PromptConfig.from_yaml(args.prompt_config)
+
+	cfg = RethinkConfig(
+		dataset=dataset_slice, 
+		instrumentation=instrumentation_cfg, 
+		generation=gen_config,
+		prompt=prompt_config,
+		device=device_str
+	)
 	logging.info("Loaded %d examples for inspection", len(examples))
 
 	if args.setup_only:
 		logging.info("Setup-only flag detected; skipping model load and inference")
+		# Need a dummy model name for the report if setup_only
+		dummy_model_name = args.model_name or "setup_only_placeholder"
 		payload = build_run_report(args, device_str, run_name, log_path, output_path, summaries=[])
 		write_run_report(output_path, payload)
 		return
 
-	tokenizer, model = prepare_model(args.model_name, device)
+	# Resolve model config
+	if args.model_config:
+		model_config = ModelConfig.from_yaml(args.model_config)
+		if args.model_name: # Override if provided
+			model_config.model_name_or_path = args.model_name
+	else:
+		# Fallback to CLI arg or default
+		model_name = args.model_name or "hf-internal-testing/tiny-random-LlamaForCausalLM"
+		model_config = ModelConfig(model_name_or_path=model_name)
+
+	tokenizer, model = prepare_model(model_config, device)
 	controller = RethinkController(model=model, tokenizer=tokenizer, cfg=cfg)
 
 	summaries = []
-	generation_kwargs = {"max_new_tokens": args.generation_max_new_tokens, "eos_token_id": tokenizer.eos_token_id}
+	# Pass model-specific kwargs like eos_token_id
+	generation_kwargs = {"eos_token_id": tokenizer.eos_token_id}
+	
 	for example in examples:
 		artifacts = controller.run_single_example(example, generation_kwargs=generation_kwargs)
 		summary = summarize_run(example, artifacts)

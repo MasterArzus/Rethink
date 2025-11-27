@@ -100,6 +100,21 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
         token_logs: List[TokenRecorder] = []
 
+        # Setup Logits Processors
+        from transformers import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper, RepetitionPenaltyLogitsProcessor
+        
+        logits_processor = LogitsProcessorList()
+        if generation_kwargs.get("repetition_penalty", 1.0) != 1.0:
+            logits_processor.append(RepetitionPenaltyLogitsProcessor(penalty=generation_kwargs["repetition_penalty"]))
+        
+        logits_warper = LogitsProcessorList()
+        if generation_kwargs.get("temperature", 1.0) != 1.0:
+            logits_warper.append(TemperatureLogitsWarper(temperature=generation_kwargs["temperature"]))
+        if generation_kwargs.get("top_k", 0) > 0:
+            logits_warper.append(TopKLogitsWarper(top_k=generation_kwargs["top_k"]))
+        if generation_kwargs.get("top_p", 1.0) < 1.0:
+            logits_warper.append(TopPLogitsWarper(top_p=generation_kwargs["top_p"]))
+
         with self._recorder.attach(self):
             past_key_values = None
             generated_ids = input_ids
@@ -110,10 +125,22 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
                     past_key_values=past_key_values,
                     return_dict=True,
                 )
-                logits = outputs.logits[:, -1, :]
+                next_token_logits = outputs.logits[:, -1, :]
                 past_key_values = outputs.past_key_values
-                probs = torch.nn.functional.softmax(logits, dim=-1)
-                next_token = torch.multinomial(probs, num_samples=1)
+                
+                # Apply processors (repetition penalty, etc)
+                next_token_logits = logits_processor(generated_ids, next_token_logits)
+                
+                # Apply warpers (sampling)
+                next_token_scores = logits_warper(generated_ids, next_token_logits)
+                
+                probs = torch.nn.functional.softmax(next_token_scores, dim=-1)
+                
+                if generation_kwargs.get("do_sample", True):
+                    next_token = torch.multinomial(probs, num_samples=1)
+                else:
+                    next_token = torch.argmax(probs, dim=-1).unsqueeze(-1)
+                
                 token_id = next_token.item()
                 
                 # Extract hidden states for this step

@@ -1,0 +1,5 @@
+# Model specific configuration
+model_name_or_path: /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct
+device_map: auto
+torch_dtype: float16
+attn_implementation: eager

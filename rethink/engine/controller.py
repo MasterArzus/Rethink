@@ -29,7 +29,12 @@ class RethinkController:
         self.system_prompt = self._load_system_prompt()
 
     def _load_system_prompt(self) -> str:
-        """Load system prompt from rethink/prompt/{dataset_name}.md"""
+        """Load system prompt from config or fallback to file/default."""
+        # Priority 1: Config
+        if self.cfg.prompt and self.cfg.prompt.system_prompt:
+            return self.cfg.prompt.system_prompt
+
+        # Priority 2: File (Legacy)
         from pathlib import Path
         
         # rethink/engine/controller.py -> rethink/prompt/
@@ -63,8 +68,8 @@ class RethinkController:
         # Check if tokenizer has a chat template
         if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
             messages = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": question}
+                {"role": self.cfg.prompt.system_role, "content": self.system_prompt},
+                {"role": self.cfg.prompt.user_role, "content": question}
             ]
             return self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         else:
@@ -77,6 +82,11 @@ class RethinkController:
         # Apply prompt engineering
         formatted_prompt = self._format_prompt(example.question)
 
+        # Merge config with runtime kwargs
+        gen_config = self.cfg.generation.to_dict()
+        if generation_kwargs:
+            gen_config.update(generation_kwargs)
+
         reference_pack = self.model.collect_forced_trace(
             tokenizer=self.tokenizer,
             prompt=formatted_prompt,
@@ -86,7 +96,7 @@ class RethinkController:
         hypothesis_pack = self.model.generate_autoregressive_trace(
             tokenizer=self.tokenizer,
             prompt=formatted_prompt,
-            generation_kwargs=generation_kwargs,
+            generation_kwargs=gen_config,
         )
 
         reference_trace = self._tracepack_to_trace_recorder(reference_pack, example.question, example.correct_answer)
