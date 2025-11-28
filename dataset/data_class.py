@@ -6,7 +6,7 @@ from rethink.recorder.trace_recorder import TraceRecorder
 
 
 @dataclass
-class BenchmarkExample:
+class DataExample:
     """Represent a single reasoning question and candidate answers."""
 
     question: str
@@ -16,9 +16,9 @@ class BenchmarkExample:
 
 
 @dataclass
-class BenchmarkResult:
+class DataResult:
     """Pair traces for later comparison and visualization."""
 
-    example: BenchmarkExample
+    example: DataExample
     reference_trace: Optional[TraceRecorder]
     model_trace: Optional[TraceRecorder]

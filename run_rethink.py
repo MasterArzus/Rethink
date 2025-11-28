@@ -17,7 +17,7 @@ from datasets import DownloadConfig, load_dataset, load_from_disk
 from transformers import AutoTokenizer, AutoConfig
 
 from rethink.utils.config import DatasetSlice, InstrumentationConfig, RethinkConfig, GenerationConfig, ModelConfig, PromptConfig
-from dataset.benchmark import BenchmarkExample
+from dataset.data_class import DataExample
 from dataset.gsm8k import load_gsm8k_slice
 from rethink.engine.llama import RethinkLlamaForCausalLM
 from rethink.engine.qwen import RethinkQwenForCausalLM
@@ -91,7 +91,7 @@ def load_benchmark_examples(
 	limit: int,
 	token: str | None,
 	local_files_only: bool,
-) -> List[BenchmarkExample]:
+) -> List[DataExample]:
 	# 1. Try loading from local disk (priority)
 	local_dataset_path = REPO_ROOT / "dataset" / name
 	if local_dataset_path.exists():
@@ -156,7 +156,7 @@ def prepare_model(model_config: ModelConfig, device: torch.device) -> tuple:
 	return tokenizer, model
 
 
-def summarize_run(example: BenchmarkExample, controller_artifacts) -> dict:
+def summarize_run(example: DataExample, controller_artifacts) -> dict:
 	ref = controller_artifacts.benchmark_result.reference_trace
 	hyp = controller_artifacts.benchmark_result.model_trace
 	report = controller_artifacts.divergence_report

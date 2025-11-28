@@ -52,3 +52,6 @@ streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 /root/autodl-fs/deepseek-ai/DeepSeek-R1-Distill-Llama-8B
 /root/autodl-fs/Qwen/Qwen3-8B
 ```
+
+## Git commit
+try **git config --global http2.maxrequests 0**

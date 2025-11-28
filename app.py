@@ -23,7 +23,7 @@ st.title("Rethink: Interactive LLM Debugging")
 st.sidebar.header("Configuration")
 
 # Model Selection Logic
-base_model_dir = "/root/autodl-fs/"
+base_model_dir = "/root/autodl-fs/LLM-Research/"
 available_models = []
 if os.path.exists(base_model_dir):
     available_models = [d for d in os.listdir(base_model_dir) if os.path.isdir(os.path.join(base_model_dir, d))]

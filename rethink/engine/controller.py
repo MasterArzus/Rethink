@@ -7,7 +7,7 @@ from typing import Optional
 
 from rethink.analysis.trace_analysis import TraceAnalysis
 from rethink.utils.config import RethinkConfig
-from dataset.benchmark import BenchmarkExample, BenchmarkResult
+from dataset.data_class import DataExample, DataResult
 from rethink.recorder.trace_recorder import TraceRecorder
 
 
@@ -15,7 +15,7 @@ from rethink.recorder.trace_recorder import TraceRecorder
 class ControllerArtifacts:
     """Artifacts surfaced to downstream dashboards/notebooks."""
 
-    benchmark_result: BenchmarkResult
+    benchmark_result: DataResult
     divergence_report: Optional[object]
 
 
@@ -76,7 +76,7 @@ class RethinkController:
             # Fallback for models without chat template
             return f"{self.system_prompt}\n\nQuestion: {question}\nAnswer:"
 
-    def run_single_example(self, example: BenchmarkExample, generation_kwargs: Optional[dict] = None) -> ControllerArtifacts:
+    def run_single_example(self, example: DataExample, generation_kwargs: Optional[dict] = None) -> ControllerArtifacts:
         """Execute both teacher-forced and free-form traces for one example."""
 
         # Apply prompt engineering
@@ -105,7 +105,7 @@ class RethinkController:
         hypothesis_answer = "".join([t.token for t in hypothesis_pack.token_logprobs])
         hypothesis_trace.answer = hypothesis_answer
 
-        benchmark_result = BenchmarkResult(
+        benchmark_result = DataResult(
             example=example,
             reference_trace=reference_trace,
             model_trace=hypothesis_trace,

@@ -2,10 +2,10 @@
 
 from typing import Iterable, List
 
-from .benchmark import BenchmarkExample
+from .data_class import DataExample
 
 
-def load_gsm8k_slice(raw_samples: Iterable[dict], limit: int = 10) -> List[BenchmarkExample]:
+def load_gsm8k_slice(raw_samples: Iterable[dict], limit: int = 10) -> List[DataExample]:
     """Convert the first ``limit`` GSM8K rows into ``BenchmarkExample`` records.
 
     Parameters
@@ -16,7 +16,7 @@ def load_gsm8k_slice(raw_samples: Iterable[dict], limit: int = 10) -> List[Bench
         Maximum number of examples to include for a quick sanity benchmark.
     """
 
-    examples: List[BenchmarkExample] = []
+    examples: List[DataExample] = []
     for idx, row in enumerate(raw_samples):
         if idx >= limit:
             break
@@ -27,7 +27,7 @@ def load_gsm8k_slice(raw_samples: Iterable[dict], limit: int = 10) -> List[Bench
             # Placeholder: create a trivial incorrect variant for debugging
             incorrect = [f"{answer} (corrupted)"]
         examples.append(
-            BenchmarkExample(
+            DataExample(
                 question=question,
                 correct_answer=answer,
                 incorrect_answers=list(incorrect),
