@@ -1,25 +1,17 @@
 import torch
-from .model_loader import load_model
 import os
 import json
 from tqdm import tqdm
 import numpy as np
 import re 
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config/model_config.json")
-with open(CONFIG_PATH, "r") as f:
-    cfg = json.load(f)
 
-tokenizer, model = load_model()
-
-def calc_target_probs(prompt: str, target_text: str, model, tokenizer, eps: float = 1e-12):
+def calc_target_probs(prompt: str, target_text: str, model, tokenizer, eps: float = 1e-12, device: str = "cuda") -> list:
     """
     计算模型在给定 prompt + target_text 下，
     target 每个 token 的条件概率 P(a_i | prompt, a_<i)
     避免浮点下溢导致的 prob=0
     """
-    device = cfg["device"]
-
     # Tokenize
     prompt_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
     target_ids = tokenizer(target_text, return_tensors="pt").input_ids.to(device)[0]

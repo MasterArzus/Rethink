@@ -36,6 +36,12 @@ class HiddenStateAnalysis:
         self.hidden_state = hidden_state
         # Ensure vector is (1, hidden_dim)
         self.vector = hidden_state.get_value().detach()
+        
+        # Handle 3D shape (batch, seq, hidden) -> take last token (batch, hidden)
+        # This ensures we are analyzing the prediction for the *next* token
+        if self.vector.dim() == 3:
+            self.vector = self.vector[:, -1, :]
+            
         if self.vector.dim() == 1:
             self.vector = self.vector.unsqueeze(0)
         

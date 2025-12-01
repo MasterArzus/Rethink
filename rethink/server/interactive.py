@@ -162,3 +162,35 @@ class InteractiveSession:
         if self.current_trace:
             analyzer = TraceAnalysis(self.current_trace, self.controller.model, self.controller.tokenizer)
             self.analysis_results = analyzer.locate_critical_intervals()
+
+
+from rethink.engine.llama import LlamaDebugStrategy
+
+class InteractiveDebugSession:
+    def __init__(self, model, tokenizer):
+        # In a real scenario, we would detect the model type and instantiate the correct strategy
+        # For now, we default to Llama
+        self.strategy = LlamaDebugStrategy(model, tokenizer)
+
+    def start(self, prompt):
+        self.strategy.start_generation(prompt)
+        return self.strategy.get_state()
+
+    def step_layer(self):
+        return self.strategy.step_layer()
+
+    def finish_token(self):
+        return self.strategy.finish_token()
+
+    def sample_and_next(self):
+        return self.strategy.sample_next_token()
+    
+    @property
+    def generated_tokens(self):
+        return [r.token for r in self.strategy.history]
+    
+    @property
+    def current_trajectory(self):
+        return self.strategy.current_trajectory
+
+
