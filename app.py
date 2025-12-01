@@ -3,15 +3,18 @@ import pandas as pd
 import plotly.express as px
 import torch
 import os
-
-# Add the root directory to sys.path to ensure imports work
+import glob
+import yaml
 import sys
+
+# Add the root directory to sys.path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from rethink.server.session_manager import SessionManager
-from rethink.server.interactive import InteractiveSession
+from rethink.server.interactive import InteractiveSession, InteractiveDebugSession
 from rethink.server.component import render_token_stream
 from rethink.utils.visualize import generate_attention_html
+from rethink.utils.config import GenerationConfig, ModelConfig, PromptConfig
 from st_click_detector import click_detector
 import streamlit.components.v1 as components
 
@@ -19,220 +22,322 @@ st.set_page_config(layout="wide", page_title="Rethink: LLM Debugger")
 
 st.title("Rethink: Interactive LLM Debugging")
 
-# Sidebar for Configuration
+# --- Helper Functions ---
+def load_config_files(subdir):
+    path = os.path.join("/root/Rethink/configs", subdir)
+    if not os.path.exists(path):
+        return {}
+    files = glob.glob(os.path.join(path, "*.yaml"))
+    return {os.path.basename(f): f for f in files}
+
+def load_yaml(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+
+# --- Sidebar Configuration ---
 st.sidebar.header("Configuration")
 
-# Model Selection Logic
-base_model_dir = "/root/autodl-fs/LLM-Research/"
-available_models = []
-if os.path.exists(base_model_dir):
-    available_models = [d for d in os.listdir(base_model_dir) if os.path.isdir(os.path.join(base_model_dir, d))]
+# 1. Model Config
+st.sidebar.subheader("Model Configuration")
+model_configs = load_config_files("models")
+selected_model_config_file = st.sidebar.selectbox("Select Model Config", options=list(model_configs.keys()) + ["Custom"])
 
-# Default to Llama if available, else first one
-default_index = 0
-for i, m in enumerate(available_models):
-    if "Llama-3.1-8B-Instruct" in m:
-        default_index = i
-        break
-
-selected_model_name = st.sidebar.selectbox(
-    "Select Model", 
-    options=available_models + ["Custom Path"], 
-    index=default_index if available_models else 0
-)
-
-if selected_model_name == "Custom Path":
-    model_path = st.sidebar.text_input("Custom Model Path", value="/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct")
+if selected_model_config_file != "Custom":
+    model_cfg_path = model_configs[selected_model_config_file]
+    model_cfg_data = load_yaml(model_cfg_path)
+    model_path = model_cfg_data.get("model_name_or_path", "")
 else:
-    model_path = os.path.join(base_model_dir, selected_model_name)
+    model_path = st.sidebar.text_input("Model Path", value="/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct")
 
-max_new_tokens = st.sidebar.slider("Max New Tokens", min_value=16, max_value=512, value=128, step=16)
-use_template = st.sidebar.checkbox("Use GSM8K Template", value=True, help="Wrap input in the standard GSM8K system prompt and format.")
+# 2. Generation Config
+st.sidebar.subheader("Generation Configuration")
+gen_configs = load_config_files("generation")
+selected_gen_config_file = st.sidebar.selectbox("Select Generation Config", options=list(gen_configs.keys()) + ["Default"])
 
-# Load Model
+if selected_gen_config_file != "Default":
+    gen_cfg_path = gen_configs[selected_gen_config_file]
+    gen_cfg_data = load_yaml(gen_cfg_path)
+else:
+    gen_cfg_data = GenerationConfig().to_dict()
+
+# Allow editing generation params
+with st.sidebar.expander("Edit Generation Parameters"):
+    temperature = st.slider("Temperature", 0.0, 2.0, float(gen_cfg_data.get("temperature", 0.4)))
+    top_p = st.slider("Top P", 0.0, 1.0, float(gen_cfg_data.get("top_p", 0.7)))
+    max_new_tokens = st.slider("Max New Tokens", 16, 1024, int(gen_cfg_data.get("max_new_tokens", 512)))
+    
+    gen_cfg_data.update({
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens
+    })
+
+# 3. Prompt Config
+st.sidebar.subheader("Prompt Configuration")
+prompt_configs = load_config_files("prompts")
+selected_prompt_config_file = st.sidebar.selectbox("Select Prompt Config", options=list(prompt_configs.keys()) + ["Default"])
+
+if selected_prompt_config_file != "Default":
+    prompt_cfg_path = prompt_configs[selected_prompt_config_file]
+    prompt_cfg_data = load_yaml(prompt_cfg_path)
+else:
+    prompt_cfg_data = PromptConfig().to_dict()
+
+# --- Model Loading ---
 if st.sidebar.button("Load Model"):
-    with st.spinner("Loading model..."):
+    with st.spinner(f"Loading model from {model_path}..."):
         try:
             model, tokenizer = SessionManager.get_resources(model_path)
             st.session_state['model'] = model
             st.session_state['tokenizer'] = tokenizer
             st.session_state['interactive_session'] = InteractiveSession(model, tokenizer)
+            st.session_state['debug_session'] = InteractiveDebugSession(model, tokenizer)
             st.success("Model loaded!")
         except Exception as e:
             st.error(f"Error loading model: {e}")
 
-if 'interactive_session' in st.session_state:
-    session = st.session_state['interactive_session']
+# --- Main Interface ---
+if 'model' in st.session_state:
+    
+    # Debug Mode Toggle
+    debug_mode = st.toggle("Enable Step-by-Step Debug Mode", value=False)
     
     # Input Area
     st.header("Input Prompt")
-    if use_template:
-        input_label = "Question (will be wrapped in template)"
-        default_prompt = "How many clips did Jack sell all together in April and May, if Jack sold 48 clips to his friends in April, and then he sold half as many clips in May. "
-    else:
-        input_label = "Full Prompt (Raw Input)"
-        default_prompt = "Question: Jack sold 48 clips to his friends in April, and then he sold half as many clips in May.  How many clips did Jack sell all together in April and May?\nAnswer:"
-        
-    prompt = st.text_area(input_label, value=default_prompt, height=150)
     
-    if st.button("Generate Trace"):
-        with st.spinner("Generating trace..."):
-            trace, analysis = session.run_initial_inference(prompt, use_template=use_template, max_new_tokens=max_new_tokens)
-            st.session_state['trace'] = trace
-            st.session_state['analysis'] = analysis
-
-    # Visualization Area
-    if 'trace' in st.session_state:
-        trace = st.session_state['trace']
-        analysis = st.session_state['analysis']
+    # Apply Prompt Template Logic
+    system_prompt = prompt_cfg_data.get("system_prompt", "")
+    user_role = prompt_cfg_data.get("user_role", "user")
+    
+    default_prompt = "Jack sold 48 clips to his friends in April, and then he sold half as many clips in May. How many clips did Jack sell all together in April and May?"
+    user_input = st.text_area("User Input", value=default_prompt, height=100)
+    
+    # Construct full prompt based on template type (simplified)
+    if prompt_cfg_data.get("template_type") == "chat":
+        full_prompt = f"<|begin_of_text|><|start_header_id|>{prompt_cfg_data.get('system_role', 'system')}<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>{user_role}<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+    else:
+        full_prompt = f"{system_prompt}\n\nQuestion: {user_input}\nAnswer:"
         
-        st.header("Trace Visualization")
-        
-        # Layout: Main Trace (Left) + Analysis Panel (Right)
-        col_trace, col_analysis = st.columns([0.7, 0.3])
-        
-        # Handle selection via query params (for clickable HTML)
-        # Check if a token was clicked
-        # if "token_idx" in st.query_params:
-        #     try:
-        #         idx = int(st.query_params["token_idx"])
-        #         st.session_state['selected_token_index'] = idx
-        #     except:
-        #         pass
-            # Clear param to avoid stuck selection on refresh (optional, but good for UX)
-            # st.query_params.clear() 
-            # Actually, keeping it might be fine, but let's leave it to persist state.
+    with st.expander("View Full Prompt"):
+        st.code(full_prompt)
 
-        selected_idx = st.session_state.get('selected_token_index', 0)
-
-        with col_trace:
-            st.subheader("Token Stream")
+    if debug_mode:
+        st.header("Debug Controller")
+        debug_session = st.session_state['debug_session']
+        
+        col_ctrl, col_view = st.columns([0.4, 0.6])
+        
+        with col_ctrl:
+            if st.button("Start Debugging"):
+                state = debug_session.start(full_prompt)
+                st.session_state['debug_state'] = state
+                st.rerun()
             
-            # Prepare data for visualization
-            token_data = []
-            for i, token in enumerate(trace.tokenlist):
-                # Determine color based on analysis
-                is_critical = False
-                reason = ""
-                for interval in analysis:
-                    if interval.start <= i <= interval.end:
-                        is_critical = True
-                        reason = interval.type
-                        break
+            if 'debug_state' in st.session_state:
+                state = st.session_state['debug_state']
                 
-                token_data.append({
-                    "index": i,
-                    "token": token.token,
-                    "prob": token.prob,
-                    "is_critical": is_critical,
-                    "reason": reason
-                })
+                st.info(f"Status: {state['status']}")
+                st.metric("Current Layer", f"{state['layer_idx']} / {state['total_layers']}")
+                
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button("Next Layer"):
+                        state = debug_session.step_layer()
+                        st.session_state['debug_state'] = state
+                        st.rerun()
+                with c2:
+                    if st.button("Finish Token"):
+                        state = debug_session.finish_token()
+                        st.session_state['debug_state'] = state
+                        st.rerun()
+                with c3:
+                    if st.button("Next Token"):
+                        state = debug_session.sample_and_next()
+                        st.session_state['debug_state'] = state
+                        st.rerun()
+                        
+                if st.button("Run to End (Max Length)"):
+                     # Loop until finished
+                     with st.spinner("Running..."):
+                         while state['status'] == "running" and len(debug_session.generated_tokens) < max_new_tokens:
+                             state = debug_session.sample_and_next()
+                         st.session_state['debug_state'] = state
+                         st.rerun()
 
-            # Generate HTML for "Sentence Flow" with Clickable Cards
-            html_content = render_token_stream(token_data, selected_idx)
+        with col_view:
+            if 'debug_state' in st.session_state:
+                state = st.session_state['debug_state']
+                
+                st.subheader("Generated Stream")
+                
+                # Visualize generated tokens using the component
+                history = debug_session.strategy.history
+                if history:
+                    token_data = []
+                    for i, record in enumerate(history):
+                        token_data.append({
+                            "index": i,
+                            "token": record.token,
+                            "prob": record.prob,
+                            "is_critical": False, 
+                            "reason": ""
+                        })
+                    
+                    # Render the stream
+                    html_content = render_token_stream(token_data, len(token_data)-1)
+                    st.components.v1.html(html_content, height=200, scrolling=True)
+                else:
+                    st.info("Start generation to see tokens.")
+                    
+                with st.expander("Raw Text"):
+                    st.text(state['full_text'])
+                
+                st.subheader("Layer Analysis")
+                
+                # Use the new TrajectoryAnalysis if available
+                current_trajectory = debug_session.current_trajectory
+                if current_trajectory and current_trajectory.current_layer_count() > 0:
+                    from rethink.analysis.trajectory_analysis import TrajectoryAnalysis
+                    
+                    # Get the last computed layer index
+                    last_layer_idx = current_trajectory.current_layer_count() - 1
+                    
+                    with st.spinner("Analyzing hidden state..."):
+                        analyzer = TrajectoryAnalysis(current_trajectory, st.session_state['model'], st.session_state['tokenizer'])
+                        
+                        # Project to vocab (Logit Lens)
+                        top_tokens = analyzer.project_to_vocab(last_layer_idx, k=10)
+                        
+                        if top_tokens:
+                            st.markdown(f"**Logit Lens (Layer {last_layer_idx})**")
+                            df_tokens = pd.DataFrame(top_tokens)
+                            # Rename columns for display
+                            df_tokens.columns = ["Token", "Probability"]
+                            st.dataframe(
+                                df_tokens.style.format({"Probability": "{:.4f}"}), 
+                                hide_index=True,
+                                use_container_width=True
+                            )
+                        else:
+                            st.warning("Could not project hidden state.")
+                            
+                        # Show Drift if we have at least 2 layers
+                        if last_layer_idx > 0:
+                            drifts = analyzer.compute_drift()
+                            if drifts:
+                                last_drift = drifts[-1]
+                                st.metric("Layer Drift (Cosine Dist)", f"{last_drift['cosine_distance']:.4f}")
+
+                        # Attention Analysis
+                        attn_weights = analyzer.get_attention_data(last_layer_idx)
+                        if attn_weights is not None:
+                            st.markdown("#### Attention Analysis")
+                            # attn_weights shape: (batch, heads, 1, seq_len)
+                            # Squeeze batch and query dim: (heads, seq_len)
+                            # We assume batch_size=1
+                            if attn_weights.dim() == 4:
+                                attn_matrix = attn_weights[0, :, 0, :].detach().cpu().numpy()
+                                
+                                # Create a heatmap: Heads vs Token Positions
+                                fig = px.imshow(
+                                    attn_matrix, 
+                                    labels=dict(x="Token Position", y="Head Index", color="Attention"),
+                                    title=f"Layer {last_layer_idx} Attention Patterns (Heads vs Context)",
+                                    aspect="auto"
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.warning(f"Unexpected attention shape: {attn_weights.shape}")
+
+                elif state['hidden_states'] is not None:
+                    # Fallback for initial state or if trajectory is empty
+                    st.write("Initial Embedding State")
+                else:
+                    st.write("No hidden state available.")
+
+
+    else:
+        # Standard Mode (Existing Logic)
+        if st.button("Generate Trace"):
+            session = st.session_state['interactive_session']
+            with st.spinner("Generating trace..."):
+                # Use the configured params
+                # Update controller config
+                session.controller.cfg.prompt = PromptConfig(**prompt_cfg_data)
+                session.controller.cfg.generation = GenerationConfig(**gen_cfg_data)
+                
+                # Re-run with updated config
+                trace, analysis = session.run_initial_inference(user_input, use_template=True, max_new_tokens=max_new_tokens)
+                
+                st.session_state['trace'] = trace
+                st.session_state['analysis'] = analysis
+        
+        # ... Visualization Code (Same as before) ...
+        if 'trace' in st.session_state:
+            trace = st.session_state['trace']
+            analysis = st.session_state['analysis']
             
-            # Use click_detector instead of st.markdown
-            clicked_id = click_detector(html_content)
+            st.header("Trace Visualization")
+            col_trace, col_analysis = st.columns([0.7, 0.3])
             
-            if clicked_id:
-                # ID format: token_{index}
-                try:
-                    new_idx = int(clicked_id.split("_")[1])
-                    st.session_state['selected_token_index'] = new_idx
-                    st.rerun()
-                except:
-                    pass
-            
-            # Metrics Plots (Below the text)
-            st.divider()
-            st.subheader("Global Metrics")
-            df = pd.DataFrame(token_data)
-            
-            tab1, tab2 = st.tabs(["Probability", "Entropy"])
-            with tab1:
+            selected_idx = st.session_state.get('selected_token_index', 0)
+
+            with col_trace:
+                st.subheader("Token Stream")
+                token_data = []
+                for i, token in enumerate(trace.tokenlist):
+                    is_critical = False
+                    reason = ""
+                    for interval in analysis:
+                        if interval.start <= i <= interval.end:
+                            is_critical = True
+                            reason = interval.type
+                            break
+                    token_data.append({
+                        "index": i, "token": token.token, "prob": token.prob,
+                        "is_critical": is_critical, "reason": reason
+                    })
+
+                html_content = render_token_stream(token_data, selected_idx)
+                clicked_id = click_detector(html_content)
+                if clicked_id:
+                    try:
+                        new_idx = int(clicked_id.split("_")[1])
+                        st.session_state['selected_token_index'] = new_idx
+                        st.rerun()
+                    except: pass
+                
+                st.divider()
+                st.subheader("Global Metrics")
+                df = pd.DataFrame(token_data)
                 fig_prob = px.line(df, x="index", y="prob", title="Token Probability")
-                # Add marker for selected
                 fig_prob.add_vline(x=selected_idx, line_dash="dash", line_color="red")
                 st.plotly_chart(fig_prob, use_container_width=True)
-            with tab2:
-                # Placeholder for entropy if not computed
-                st.info("Entropy computation requires full analysis.")
 
-        with col_analysis:
-            st.header("Analysis Panel")
-            
-            tab_details, tab_attention = st.tabs(["Token Details", "Attention"])
-            
-            with tab_details:
+            with col_analysis:
+                st.header("Analysis Panel")
                 if 0 <= selected_idx < len(token_data):
                     selected_item = token_data[selected_idx]
-                    
-                    # Card-like container for details
                     with st.container(border=True):
                         st.subheader(f"Token: '{selected_item['token']}'")
-                        st.caption(f"Index: {selected_item['index']}")
-                        
                         st.metric("Probability", f"{selected_item['prob']:.4f}")
-                        
                         if selected_item['is_critical']:
                             st.error(f"Critical: {selected_item['reason']}")
                         
-                        # Fetch alternatives
                         if 'analysis_obj' not in st.session_state:
                              from rethink.analysis.trace_analysis import TraceAnalysis
                              st.session_state['analysis_obj'] = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
                         
                         analyzer = st.session_state['analysis_obj']
-                        
                         with st.spinner("Decoding alternatives..."):
                             alts = analyzer.get_token_alternatives(selected_idx, k=10)
-                        
                         if alts:
-                            st.metric("Entropy", f"{alts.get('entropy', 0.0):.4f}")
                             st.markdown("**Top Alternatives:**")
                             if 'top_k' in alts:
                                 alt_df = pd.DataFrame(alts['top_k'], columns=["Token", "Prob"])
-                                st.dataframe(
-                                    alt_df.style.format({"Prob": "{:.4f}"}), 
-                                    hide_index=True,
-                                    use_container_width=True
-                                )
-                    
-                    # Intervention in the side panel
-                    with st.container(border=True):
-                        st.subheader("Intervention")
-                        st.caption(f"Edit starting from here")
-                        
-                        new_text = st.text_input("New Text", value="", key=f"input_{selected_idx}")
-                        
-                        if st.button("Apply", use_container_width=True):
-                            with st.spinner("Running intervention..."):
-                                new_trace, new_analysis = session.run_intervention(new_text, selected_idx)
-                                st.session_state['trace'] = new_trace
-                                st.session_state['analysis'] = new_analysis
-                                st.rerun()
+                                st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, use_container_width=True)
                 else:
-                    st.info("Select a token to view details.")
-            
-            with tab_attention:
-                st.info("Visualize attention weights for the full sequence.")
-                if st.button("Generate Attention View", use_container_width=True):
-                    with st.spinner("Computing attention (this may take a moment)..."):
-                        # Reconstruct full text
-                        full_text = trace.question + trace.get_full_text()
-                        html_code = generate_attention_html(session.controller.model, session.controller.tokenizer, full_text)
-                        components.html(html_code, height=800, scrolling=True)
-
-
-    # Session Management
-    st.sidebar.header("Session Management")
-    if st.sidebar.button("Save Current Session"):
-        if 'interactive_session' in st.session_state and st.session_state['interactive_session'].current_trace:
-            filepath = st.session_state['interactive_session'].save_session()
-            st.sidebar.success(f"Session saved to {filepath}")
-        else:
-            st.sidebar.warning("No trace to save.")
-
+                    st.info("Select a token.")
 
 else:
     st.info("Please load a model to begin.")
