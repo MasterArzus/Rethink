@@ -101,6 +101,59 @@ class InteractiveSession:
         self._analyze_trace()
         return self.current_trace, self.analysis_results
 
+    def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128):
+        """
+        Truncate the trace at step_idx and regenerate from there.
+        """
+        # 1. Construct the new prompt context
+        # The original prompt (including system prompts etc)
+        base_prompt = trace_recorder.question
+        
+        # The tokens generated up to step_idx (inclusive)
+        # We keep the token at step_idx, and generate what comes AFTER it.
+        kept_tokens = trace_recorder.tokenlist[:step_idx+1]
+        kept_text = "".join([t.token for t in kept_tokens])
+        
+        new_full_prompt = base_prompt + kept_text
+        
+        # 2. Run generation
+        # We pass use_template=False because new_full_prompt is already fully formatted
+        new_trace, analysis = self.run_initial_inference(new_full_prompt, use_template=False, max_new_tokens=max_new_tokens)
+        
+        # 3. Merge traces for visualization continuity
+        # The new_trace will contain tokens starting from index 0 relative to the new generation.
+        # But we want to visualize it as a continuation.
+        # Actually, run_initial_inference returns a full trace of the NEW generation.
+        # But since we provided the prefix as prompt, the new trace only contains the NEWLY generated tokens
+        # (because generate_autoregressive_trace usually returns only new tokens in token_logprobs).
+        
+        # Let's verify generate_autoregressive_trace behavior in llama.py:
+        # It returns token_logs which are appended during generation loop.
+        # So new_trace.tokenlist only contains the NEW tokens.
+        
+        # We need to prepend the kept tokens to make a complete trace for visualization
+        full_token_list = kept_tokens + new_trace.tokenlist
+        
+        # Re-index the new tokens
+        start_idx = len(kept_tokens)
+        for i, t in enumerate(new_trace.tokenlist):
+            t.idx = t.idx # Token ID remains same
+            t.step = start_idx + i # Update step index
+            
+        # Create a new combined TraceRecorder
+        combined_trace = TraceRecorder(
+            question=trace_recorder.question, # Original question
+            answer=kept_text + new_trace.get_full_text(),
+            tokenlist=full_token_list,
+            metadata=new_trace.metadata
+        )
+        
+        # Re-analyze the combined trace
+        analyzer = TraceAnalysis(combined_trace, self.controller.model, self.controller.tokenizer)
+        combined_analysis = analyzer.locate_critical_intervals()
+        
+        return combined_trace, combined_analysis
+
     def run_intervention(self, modified_tokens, start_index):
         """
         Run inference starting from a specific point with modified tokens.

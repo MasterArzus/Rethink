@@ -198,7 +198,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
 
         with self._recorder.attach(self):
             for step, token_id in enumerate(target_ids.tolist()):
-                outputs = super().forward(input_ids=generated_ids, use_cache=True, return_dict=True)
+                outputs = super().forward(input_ids=generated_ids, use_cache=True, return_dict=True, output_attentions=True)
                 logits = outputs.logits[:, -1, :]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 prob = torch.exp(log_probs[0, token_id]).item()
@@ -208,7 +208,8 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                 if self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
-                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
+                            # states is now List[HiddenState]
+                            current_states[l] = states[-1]
 
                 token_logs.append(
                     TokenRecorder(
@@ -269,6 +270,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                     use_cache=True,
                     past_key_values=past_key_values,
                     return_dict=True,
+                    output_attentions=True,
                 )
                 next_token_logits = outputs.logits[:, -1, :]
                 past_key_values = outputs.past_key_values
@@ -293,7 +295,8 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                 if self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
-                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
+                            # states is now List[HiddenState]
+                            current_states[l] = states[-1]
 
                 token_logs.append(
                     TokenRecorder(

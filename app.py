@@ -122,140 +122,7 @@ if 'model' in st.session_state:
         st.code(full_prompt)
 
     if debug_mode:
-        st.header("Debug Controller")
-        debug_session = st.session_state['debug_session']
-        
-        col_ctrl, col_view = st.columns([0.4, 0.6])
-        
-        with col_ctrl:
-            if st.button("Start Debugging"):
-                state = debug_session.start(full_prompt)
-                st.session_state['debug_state'] = state
-                st.rerun()
-            
-            if 'debug_state' in st.session_state:
-                state = st.session_state['debug_state']
-                
-                st.info(f"Status: {state['status']}")
-                st.metric("Current Layer", f"{state['layer_idx']} / {state['total_layers']}")
-                
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    if st.button("Next Layer"):
-                        state = debug_session.step_layer()
-                        st.session_state['debug_state'] = state
-                        st.rerun()
-                with c2:
-                    if st.button("Finish Token"):
-                        state = debug_session.finish_token()
-                        st.session_state['debug_state'] = state
-                        st.rerun()
-                with c3:
-                    if st.button("Next Token"):
-                        state = debug_session.sample_and_next()
-                        st.session_state['debug_state'] = state
-                        st.rerun()
-                        
-                if st.button("Run to End (Max Length)"):
-                     # Loop until finished
-                     with st.spinner("Running..."):
-                         while state['status'] == "running" and len(debug_session.generated_tokens) < max_new_tokens:
-                             state = debug_session.sample_and_next()
-                         st.session_state['debug_state'] = state
-                         st.rerun()
-
-        with col_view:
-            if 'debug_state' in st.session_state:
-                state = st.session_state['debug_state']
-                
-                st.subheader("Generated Stream")
-                
-                # Visualize generated tokens using the component
-                history = debug_session.strategy.history
-                if history:
-                    token_data = []
-                    for i, record in enumerate(history):
-                        token_data.append({
-                            "index": i,
-                            "token": record.token,
-                            "prob": record.prob,
-                            "is_critical": False, 
-                            "reason": ""
-                        })
-                    
-                    # Render the stream
-                    html_content = render_token_stream(token_data, len(token_data)-1)
-                    st.components.v1.html(html_content, height=200, scrolling=True)
-                else:
-                    st.info("Start generation to see tokens.")
-                    
-                with st.expander("Raw Text"):
-                    st.text(state['full_text'])
-                
-                st.subheader("Layer Analysis")
-                
-                # Use the new TrajectoryAnalysis if available
-                current_trajectory = debug_session.current_trajectory
-                if current_trajectory and current_trajectory.current_layer_count() > 0:
-                    from rethink.analysis.trajectory_analysis import TrajectoryAnalysis
-                    
-                    # Get the last computed layer index
-                    last_layer_idx = current_trajectory.current_layer_count() - 1
-                    
-                    with st.spinner("Analyzing hidden state..."):
-                        analyzer = TrajectoryAnalysis(current_trajectory, st.session_state['model'], st.session_state['tokenizer'])
-                        
-                        # Project to vocab (Logit Lens)
-                        top_tokens = analyzer.project_to_vocab(last_layer_idx, k=10)
-                        
-                        if top_tokens:
-                            st.markdown(f"**Logit Lens (Layer {last_layer_idx})**")
-                            df_tokens = pd.DataFrame(top_tokens)
-                            # Rename columns for display
-                            df_tokens.columns = ["Token", "Probability"]
-                            st.dataframe(
-                                df_tokens.style.format({"Probability": "{:.4f}"}), 
-                                hide_index=True,
-                                use_container_width=True
-                            )
-                        else:
-                            st.warning("Could not project hidden state.")
-                            
-                        # Show Drift if we have at least 2 layers
-                        if last_layer_idx > 0:
-                            drifts = analyzer.compute_drift()
-                            if drifts:
-                                last_drift = drifts[-1]
-                                st.metric("Layer Drift (Cosine Dist)", f"{last_drift['cosine_distance']:.4f}")
-
-                        # Attention Analysis
-                        attn_weights = analyzer.get_attention_data(last_layer_idx)
-                        if attn_weights is not None:
-                            st.markdown("#### Attention Analysis")
-                            # attn_weights shape: (batch, heads, 1, seq_len)
-                            # Squeeze batch and query dim: (heads, seq_len)
-                            # We assume batch_size=1
-                            if attn_weights.dim() == 4:
-                                attn_matrix = attn_weights[0, :, 0, :].detach().cpu().numpy()
-                                
-                                # Create a heatmap: Heads vs Token Positions
-                                fig = px.imshow(
-                                    attn_matrix, 
-                                    labels=dict(x="Token Position", y="Head Index", color="Attention"),
-                                    title=f"Layer {last_layer_idx} Attention Patterns (Heads vs Context)",
-                                    aspect="auto"
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                            else:
-                                st.warning(f"Unexpected attention shape: {attn_weights.shape}")
-
-                elif state['hidden_states'] is not None:
-                    # Fallback for initial state or if trajectory is empty
-                    st.write("Initial Embedding State")
-                else:
-                    st.write("No hidden state available.")
-
-
+        st.info("Debug interface is being redesigned.")
     else:
         # Standard Mode (Existing Logic)
         if st.button("Generate Trace"):
@@ -285,6 +152,8 @@ if 'model' in st.session_state:
             with col_trace:
                 st.subheader("Token Stream")
                 token_data = []
+                rethink_start = st.session_state.get('rethink_start_index', -1)
+                
                 for i, token in enumerate(trace.tokenlist):
                     is_critical = False
                     reason = ""
@@ -293,9 +162,13 @@ if 'model' in st.session_state:
                             is_critical = True
                             reason = interval.type
                             break
+                    
+                    is_new = (rethink_start != -1 and i >= rethink_start)
+                    
                     token_data.append({
                         "index": i, "token": token.token, "prob": token.prob,
-                        "is_critical": is_critical, "reason": reason
+                        "is_critical": is_critical, "reason": reason,
+                        "is_new": is_new
                     })
 
                 html_content = render_token_stream(token_data, selected_idx)
@@ -336,6 +209,23 @@ if 'model' in st.session_state:
                             if 'top_k' in alts:
                                 alt_df = pd.DataFrame(alts['top_k'], columns=["Token", "Prob"])
                                 st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, use_container_width=True)
+                        
+                        st.divider()
+                        st.markdown("### Intervention")
+                        if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
+                            session = st.session_state['interactive_session']
+                            with st.spinner(f"Rethinking from step {selected_idx}..."):
+                                new_trace, new_analysis = session.rethink_from_step(
+                                    trace, 
+                                    selected_idx, 
+                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128)
+                                )
+                                st.session_state['trace'] = new_trace
+                                st.session_state['analysis'] = new_analysis
+                                st.session_state['selected_token_index'] = selected_idx
+                                # Mark where the new generation started
+                                st.session_state['rethink_start_index'] = selected_idx + 1
+                                st.rerun()
                 else:
                     st.info("Select a token.")
 

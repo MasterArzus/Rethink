@@ -1,11 +1,13 @@
 import textwrap
 
-def render_token_card(token, index, prob, is_critical, reason, is_selected):
+def render_token_card(token, index, prob, is_critical, reason, is_selected, is_new=False):
     classes = ["token-card"]
     if is_critical:
         classes.append(f"critical-{reason}")
     if is_selected:
         classes.append("selected")
+    if is_new:
+        classes.append("new-token")
     
     safe_token = token.replace("<", "&lt;").replace(">", "&gt;")
     
@@ -85,6 +87,13 @@ def render_token_stream(token_data, selected_idx):
         }
         .token-card.selected .token-main { color: #1565c0; }
         .token-card.selected .token-sub { color: #1976d2; }
+
+        /* New Token State */
+        .token-card.new-token .token-main {
+            text-decoration: underline;
+            text-decoration-color: #2196f3;
+            text-decoration-thickness: 2px;
+        }
         
     </style>
     """)
@@ -97,7 +106,8 @@ def render_token_stream(token_data, selected_idx):
             item['prob'], 
             item['is_critical'], 
             item['reason'], 
-            item['index'] == selected_idx
+            item['index'] == selected_idx,
+            item.get('is_new', False)
         )
     html_content += "</div>"
     return html_content

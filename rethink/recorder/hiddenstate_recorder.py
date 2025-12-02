@@ -34,7 +34,8 @@ class HiddenStateRecorder:
     def __init__(self, layers: Optional[List[int]] = None, device: Optional[str] = None):
         self.layers = layers
         self.device = device
-        self.storage: Dict[int, List[torch.Tensor]] = {}
+        # Storage now holds List[HiddenState] instead of List[torch.Tensor]
+        self.storage: Dict[int, List[HiddenState]] = {}
         self.handles: List[torch.utils.hooks.RemovableHandle] = []
 
     def _should_capture(self, layer_idx: int) -> bool:
@@ -44,11 +45,42 @@ class HiddenStateRecorder:
         def wrapper(_module, _inputs, outputs):
             if not self._should_capture(layer_idx):
                 return
-            hidden_state = outputs[0] if isinstance(outputs, tuple) else outputs
-            # clone the last token vector for lightweight storage
+            
+            # Parse outputs
+            # HuggingFace LlamaDecoderLayer output: (hidden_states, self_attn_weights, present_key_value)
+            # If output_attentions=False, it might be just (hidden_states,) or (hidden_states, present_key_value)
+            
+            hidden_state = None
+            attn_weights = None
+            
+            if isinstance(outputs, tuple):
+                hidden_state = outputs[0]
+                # Try to find attention weights
+                # Usually if output_attentions=True, it's the second element
+                if len(outputs) > 1:
+                    # Check if the second element looks like attention weights
+                    # Shape: (batch, heads, seq_len, seq_len)
+                    possible_attn = outputs[1]
+                    if isinstance(possible_attn, torch.Tensor) and possible_attn.dim() == 4:
+                        attn_weights = possible_attn
+            else:
+                hidden_state = outputs
+
+            # Clone and move to CPU
             # Assuming we want to capture the last token's hidden state
             token_vec = hidden_state[:, -1, :].detach().to(self.device or "cpu").cpu()
-            self.storage.setdefault(layer_idx, []).append(token_vec)
+            
+            attn_data = None
+            if attn_weights is not None:
+                # We usually only care about the attention for the last token query
+                # attn_weights shape: (batch, heads, query_len, key_len)
+                # For generation, query_len is usually 1.
+                attn_data = {"attn_weights": attn_weights.detach().to(self.device or "cpu").cpu()}
+
+            # Create HiddenState object
+            hs = HiddenState(layer_idx=layer_idx, value=token_vec, attention_data=attn_data)
+            
+            self.storage.setdefault(layer_idx, []).append(hs)
 
         return wrapper
 
