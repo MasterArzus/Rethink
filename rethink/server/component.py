@@ -19,8 +19,8 @@ def render_token_card(token, index, prob, is_critical, reason, is_selected, is_n
     
     # Use 'id' for st-click-detector if available, otherwise fallback to link
     # We'll generate an anchor with an ID that st-click-detector can catch
-    # href='#' prevents navigation if caught by JS, but st-click-detector handles it.
-    return f"""<a href='#' id='token_{index}' class="{' '.join(classes)}">{content}</a>"""
+    # href='javascript:void(0);' prevents navigation and scrolling
+    return f"""<a href='javascript:void(0);' id='token_{index}' class="{' '.join(classes)}">{content}</a>"""
 
 
 def render_token_stream(token_data, selected_idx):

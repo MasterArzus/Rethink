@@ -6,6 +6,7 @@ import os
 import glob
 import yaml
 import sys
+import datasets
 
 # Add the root directory to sys.path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -83,6 +84,54 @@ if selected_prompt_config_file != "Default":
 else:
     prompt_cfg_data = PromptConfig().to_dict()
 
+# 4. Dataset Config
+st.sidebar.subheader("Dataset Configuration")
+dataset_config = load_yaml("/root/Rethink/configs/datasets.yaml")
+selected_dataset_name = st.sidebar.selectbox("Select Dataset", options=["None"] + list(dataset_config.keys()))
+
+loaded_example_question = None
+
+if selected_dataset_name != "None":
+    dataset_path = dataset_config[selected_dataset_name]
+    try:
+        # Load dataset from disk
+        if os.path.exists(dataset_path):
+            # Check if it's a directory (Arrow format) or file
+            if os.path.isdir(dataset_path):
+                ds = datasets.load_from_disk(dataset_path)
+            else:
+                # Fallback for other formats if needed, but assuming arrow/disk for now
+                st.sidebar.warning("Dataset path is not a directory. Trying load_dataset...")
+                ds = datasets.load_dataset(dataset_path)
+            
+            # Select split
+            if isinstance(ds, datasets.DatasetDict):
+                split = st.sidebar.selectbox("Split", options=list(ds.keys()))
+                data = ds[split]
+            else:
+                data = ds
+                
+            # Select example
+            max_idx = len(data) - 1
+            example_idx = st.sidebar.number_input("Example Index", min_value=0, max_value=max_idx, value=0)
+            
+            selected_example = data[example_idx]
+            question = selected_example.get("question", "")
+            answer = selected_example.get("answer", "")
+            
+            with st.sidebar.expander("Preview Example"):
+                st.markdown(f"**Question:** {question[:100]}...")
+                st.markdown(f"**Answer:** {answer[:100]}...")
+            
+            if st.sidebar.button("Load Example"):
+                st.session_state['user_input_area'] = question
+                st.rerun()
+        else:
+            st.sidebar.error(f"Dataset path not found: {dataset_path}")
+            
+    except Exception as e:
+        st.sidebar.error(f"Error loading dataset: {e}")
+
 # --- Model Loading ---
 if st.sidebar.button("Load Model"):
     with st.spinner(f"Loading model from {model_path}..."):
@@ -110,7 +159,11 @@ if 'model' in st.session_state:
     user_role = prompt_cfg_data.get("user_role", "user")
     
     default_prompt = "Jack sold 48 clips to his friends in April, and then he sold half as many clips in May. How many clips did Jack sell all together in April and May?"
-    user_input = st.text_area("User Input", value=default_prompt, height=100)
+    
+    if 'user_input_area' not in st.session_state:
+        st.session_state['user_input_area'] = default_prompt
+        
+    user_input = st.text_area("User Input", key="user_input_area", height=100)
     
     # Construct full prompt based on template type (simplified)
     if prompt_cfg_data.get("template_type") == "chat":
@@ -138,6 +191,8 @@ if 'model' in st.session_state:
                 
                 st.session_state['trace'] = trace
                 st.session_state['analysis'] = analysis
+                # Reset rethink state
+                st.session_state['rethink_start_index'] = -1
         
         # ... Visualization Code (Same as before) ...
         if 'trace' in st.session_state:
@@ -172,12 +227,13 @@ if 'model' in st.session_state:
                     })
 
                 html_content = render_token_stream(token_data, selected_idx)
-                clicked_id = click_detector(html_content)
+                clicked_id = click_detector(html_content, key="token_stream_click_detector")
                 if clicked_id:
                     try:
                         new_idx = int(clicked_id.split("_")[1])
-                        st.session_state['selected_token_index'] = new_idx
-                        st.rerun()
+                        if new_idx != selected_idx:
+                            st.session_state['selected_token_index'] = new_idx
+                            st.rerun()
                     except: pass
                 
                 st.divider()
@@ -185,7 +241,7 @@ if 'model' in st.session_state:
                 df = pd.DataFrame(token_data)
                 fig_prob = px.line(df, x="index", y="prob", title="Token Probability")
                 fig_prob.add_vline(x=selected_idx, line_dash="dash", line_color="red")
-                st.plotly_chart(fig_prob, use_container_width=True)
+                st.plotly_chart(fig_prob, width='stretch')
 
             with col_analysis:
                 st.header("Analysis Panel")
@@ -203,29 +259,55 @@ if 'model' in st.session_state:
                         
                         analyzer = st.session_state['analysis_obj']
                         with st.spinner("Decoding alternatives..."):
+                            # Pass current temperature to align probabilities
+                            current_temp = float(gen_cfg_data.get("temperature", 1.0))
                             alts = analyzer.get_token_alternatives(selected_idx, k=10)
                         if alts:
                             st.markdown("**Top Alternatives:**")
                             if 'top_k' in alts:
                                 alt_df = pd.DataFrame(alts['top_k'], columns=["Token", "Prob"])
-                                st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, use_container_width=True)
+                                st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
+                                
+                                # Selection for forcing
+                                alt_options = alt_df["Token"].tolist()
+                                selected_alt_token = st.selectbox("Select alternative to force:", options=alt_options)
                         
                         st.divider()
                         st.markdown("### Intervention")
-                        if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
-                            session = st.session_state['interactive_session']
-                            with st.spinner(f"Rethinking from step {selected_idx}..."):
-                                new_trace, new_analysis = session.rethink_from_step(
-                                    trace, 
-                                    selected_idx, 
-                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128)
-                                )
-                                st.session_state['trace'] = new_trace
-                                st.session_state['analysis'] = new_analysis
-                                st.session_state['selected_token_index'] = selected_idx
-                                # Mark where the new generation started
-                                st.session_state['rethink_start_index'] = selected_idx + 1
-                                st.rerun()
+                        
+                        col_btn1, col_btn2 = st.columns(2)
+                        with col_btn1:
+                            if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
+                                session = st.session_state['interactive_session']
+                                with st.spinner(f"Rethinking from step {selected_idx}..."):
+                                    new_trace, new_analysis = session.rethink_from_step(
+                                        trace, 
+                                        selected_idx, 
+                                        max_new_tokens=gen_cfg_data.get("max_new_tokens", 128)
+                                    )
+                                    st.session_state['trace'] = new_trace
+                                    st.session_state['analysis'] = new_analysis
+                                    st.session_state['selected_token_index'] = selected_idx
+                                    # Mark where the new generation started
+                                    st.session_state['rethink_start_index'] = selected_idx + 1
+                                    st.rerun()
+                        
+                        with col_btn2:
+                            if alts and st.button("Rethink with Selection", help="Replace current token with selected alternative and regenerate."):
+                                session = st.session_state['interactive_session']
+                                with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
+                                    new_trace, new_analysis = session.rethink_from_step(
+                                        trace, 
+                                        selected_idx, 
+                                        max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
+                                        force_token=selected_alt_token
+                                    )
+                                    st.session_state['trace'] = new_trace
+                                    st.session_state['analysis'] = new_analysis
+                                    st.session_state['selected_token_index'] = selected_idx
+                                    # Mark where the new generation started (including the forced token)
+                                    st.session_state['rethink_start_index'] = selected_idx
+                                    st.rerun()
                 else:
                     st.info("Select a token.")
 

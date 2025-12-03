@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from rethink.engine.controller import RethinkController
 from rethink.recorder.trace_recorder import TraceRecorder
+from rethink.recorder.token_recorder import TokenRecorder
 from rethink.analysis.trace_analysis import TraceAnalysis
 from rethink.utils.config import RethinkConfig, DatasetSlice, InstrumentationConfig
 
@@ -101,20 +102,41 @@ class InteractiveSession:
         self._analyze_trace()
         return self.current_trace, self.analysis_results
 
-    def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128):
+    def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128, force_token=None):
         """
         Truncate the trace at step_idx and regenerate from there.
+        If force_token is provided, replace the token at step_idx with it.
         """
         # 1. Construct the new prompt context
         # The original prompt (including system prompts etc)
         base_prompt = trace_recorder.question
         
-        # The tokens generated up to step_idx (inclusive)
-        # We keep the token at step_idx, and generate what comes AFTER it.
-        kept_tokens = trace_recorder.tokenlist[:step_idx+1]
-        kept_text = "".join([t.token for t in kept_tokens])
+        # The tokens generated BEFORE step_idx
+        prefix_tokens = trace_recorder.tokenlist[:step_idx]
+        prefix_text = "".join([t.token for t in prefix_tokens])
         
-        new_full_prompt = base_prompt + kept_text
+        # The token at the rethink point
+        if force_token is not None:
+            current_token_text = force_token
+            # Create a dummy recorder for the forced token
+            # Try to get ID from tokenizer
+            ids = self.controller.tokenizer.encode(force_token, add_special_tokens=False)
+            token_id = ids[0] if ids else -1
+            
+            forced_recorder = TokenRecorder(
+                idx=token_id,
+                step=len(prefix_tokens),
+                token=force_token,
+                prob=1.0, # Forced
+                log_prob=0.0,
+                hidden_states={} # No hidden states
+            )
+            middle_token_list = [forced_recorder]
+        else:
+            current_token_text = trace_recorder.tokenlist[step_idx].token
+            middle_token_list = [trace_recorder.tokenlist[step_idx]]
+        
+        new_full_prompt = base_prompt + prefix_text + current_token_text
         
         # 2. Run generation
         # We pass use_template=False because new_full_prompt is already fully formatted
@@ -127,23 +149,18 @@ class InteractiveSession:
         # But since we provided the prefix as prompt, the new trace only contains the NEWLY generated tokens
         # (because generate_autoregressive_trace usually returns only new tokens in token_logprobs).
         
-        # Let's verify generate_autoregressive_trace behavior in llama.py:
-        # It returns token_logs which are appended during generation loop.
-        # So new_trace.tokenlist only contains the NEW tokens.
-        
         # We need to prepend the kept tokens to make a complete trace for visualization
-        full_token_list = kept_tokens + new_trace.tokenlist
+        full_token_list = prefix_tokens + middle_token_list + new_trace.tokenlist
         
         # Re-index the new tokens
-        start_idx = len(kept_tokens)
-        for i, t in enumerate(new_trace.tokenlist):
-            t.idx = t.idx # Token ID remains same
-            t.step = start_idx + i # Update step index
+        start_idx = 0
+        for i, t in enumerate(full_token_list):
+            t.step = i # Update step index
             
         # Create a new combined TraceRecorder
         combined_trace = TraceRecorder(
             question=trace_recorder.question, # Original question
-            answer=kept_text + new_trace.get_full_text(),
+            answer=prefix_text + current_token_text + new_trace.get_full_text(),
             tokenlist=full_token_list,
             metadata=new_trace.metadata
         )
