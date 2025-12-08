@@ -238,6 +238,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
         tokenizer,
         prompt: str,
         generation_kwargs: Optional[dict] = None,
+        stream_callback: Optional[Any] = None,
     ) -> TracePack:
         """Run open-ended decoding while storing statistics for each emitted token."""
 
@@ -298,11 +299,15 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                             # states is now List[HiddenState]
                             current_states[l] = states[-1]
 
+                token_str = tokenizer.decode([token_id])
+                if stream_callback:
+                    stream_callback(token_str)
+
                 token_logs.append(
                     TokenRecorder(
                         idx=token_id,
                         step=step,
-                        token=tokenizer.decode([token_id]),
+                        token=token_str,
                         prob=probs[0, token_id].item(),
                         log_prob=torch.log(probs[0, token_id]).item(),
                         hidden_states=current_states,

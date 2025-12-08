@@ -69,7 +69,7 @@ class InteractiveSession:
             
         return filepath
 
-    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128):
+    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128, stream_callback=None):
         """
         Run the initial inference to get the baseline trace.
         """
@@ -92,7 +92,8 @@ class InteractiveSession:
             generation_kwargs={
                 "max_new_tokens": max_new_tokens,
                 "eos_token_id": terminators
-            }
+            },
+            stream_callback=stream_callback
         )
         
         # Convert to TraceRecorder

@@ -18,3 +18,5 @@ build/
 pip-wheel-metadata/
 __pycache__/
 dataset/gsm8k/
+dataset/math500/
+dataset/humaneval/

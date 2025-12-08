@@ -120,8 +120,8 @@ if selected_dataset_name != "None":
             answer = selected_example.get("answer", "")
             
             with st.sidebar.expander("Preview Example"):
-                st.markdown(f"**Question:** {question[:100]}...")
-                st.markdown(f"**Answer:** {answer[:100]}...")
+                st.markdown(f"**Question:** {question}")
+                st.markdown(f"**Answer:** {answer}")
             
             if st.sidebar.button("Load Example"):
                 st.session_state['user_input_area'] = question
@@ -134,16 +134,25 @@ if selected_dataset_name != "None":
 
 # --- Model Loading ---
 if st.sidebar.button("Load Model"):
-    with st.spinner(f"Loading model from {model_path}..."):
-        try:
+    try:
+        with st.status("Loading model resources...", expanded=True) as status:
+            st.write("Initializing Session Manager...")
+            # Simulate a small delay or just show steps
+            
+            st.write(f"Loading model weights from {model_path}...")
             model, tokenizer = SessionManager.get_resources(model_path)
+            
+            st.write("Initializing interactive session...")
             st.session_state['model'] = model
             st.session_state['tokenizer'] = tokenizer
             st.session_state['interactive_session'] = InteractiveSession(model, tokenizer)
             st.session_state['debug_session'] = InteractiveDebugSession(model, tokenizer)
-            st.success("Model loaded!")
-        except Exception as e:
-            st.error(f"Error loading model: {e}")
+            
+            status.update(label="Model loaded successfully!", state="complete", expanded=False)
+            
+        st.success("Ready to generate!")
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
 
 # --- Main Interface ---
 if 'model' in st.session_state:
@@ -180,6 +189,17 @@ if 'model' in st.session_state:
         # Standard Mode (Existing Logic)
         if st.button("Generate Trace"):
             session = st.session_state['interactive_session']
+            
+            # Container for streaming output
+            st.markdown("### Generated Output")
+            stream_placeholder = st.empty()
+            stream_state = {"text": ""}
+            
+            def stream_callback(token):
+                stream_state["text"] += token
+                # Use a cursor to indicate streaming
+                stream_placeholder.markdown(stream_state["text"] + "▌")
+            
             with st.spinner("Generating trace..."):
                 # Use the configured params
                 # Update controller config
@@ -187,7 +207,15 @@ if 'model' in st.session_state:
                 session.controller.cfg.generation = GenerationConfig(**gen_cfg_data)
                 
                 # Re-run with updated config
-                trace, analysis = session.run_initial_inference(user_input, use_template=True, max_new_tokens=max_new_tokens)
+                trace, analysis = session.run_initial_inference(
+                    user_input, 
+                    use_template=True, 
+                    max_new_tokens=max_new_tokens,
+                    stream_callback=stream_callback
+                )
+                
+                # Final update without cursor
+                stream_placeholder.markdown(stream_state["text"])
                 
                 st.session_state['trace'] = trace
                 st.session_state['analysis'] = analysis
