@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
+
+import torch
 
 from rethink.analysis.trace_analysis import TraceAnalysis
 from rethink.utils.config import RethinkConfig
 from dataset.data_class import DataExample, DataResult
 from rethink.recorder.trace_recorder import TraceRecorder
+from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder, HiddenState
+from rethink.recorder.token_recorder import TokenRecorder
+from rethink.recorder.trajectory import Trajectory
 
 
 @dataclass
@@ -62,6 +67,151 @@ class RethinkController:
             tokenlist=tracepack.token_logprobs,
             metadata={"extra": tracepack.extra}
         )
+
+    @torch.no_grad()
+    def _project_hidden_state(self, hidden_state: torch.Tensor) -> torch.Tensor:
+        """
+        Project a single hidden state through the final normalization + LM head to obtain logits.
+        Assumes hidden_state has shape (1, hidden_dim).
+        """
+        state = hidden_state.to(self.model.device)
+        if state.dim() == 2:
+            state = state.unsqueeze(1)
+        normalized = self.model.model.norm(state)
+        return self.model.lm_head(normalized)
+
+    @torch.no_grad()
+    def _decode_hidden_state(self, hidden_state: torch.Tensor, top_k: int = 10) -> List[Tuple[str, float]]:
+        logits = self._project_hidden_state(hidden_state)
+        probs = torch.nn.functional.softmax(logits[0, -1, :], dim=-1)
+        top_probs, top_indices = torch.topk(probs, k=top_k)
+        return [
+            (self.tokenizer.decode([idx.item()]), prob.item())
+            for prob, idx in zip(top_probs, top_indices)
+        ]
+
+    @torch.no_grad()
+    def compute_hidden_states_for_step(
+        self,
+        trace: TraceRecorder,
+        step_idx: int,
+        layers: Optional[List[int]] = None,
+    ) -> TokenRecorder:
+        """
+        Re-compute hidden states for a specific generation step by teacher-forcing
+        the generated tokens up to that step. Captures all requested layers.
+        """
+
+        if step_idx < 0 or step_idx >= len(trace.tokenlist):
+            raise IndexError(f"step_idx {step_idx} out of range for trace of length {len(trace.tokenlist)}")
+
+        device = self.model.device
+        prompt_ids = self.tokenizer(trace.question, return_tensors="pt").input_ids.to(device)
+
+        target_tokens = trace.tokenlist[: step_idx + 1]
+        target_ids = torch.tensor([[t.idx for t in target_tokens]], device=device)
+
+        recorder = HiddenStateRecorder(layers=layers)
+        generated_ids = prompt_ids
+        past_key_values = None
+        token_logs: List[TokenRecorder] = []
+
+        with recorder.attach(self.model):
+            for step, token_id in enumerate(target_ids[0].tolist()):
+                outputs = self.model.forward(
+                    input_ids=generated_ids,
+                    use_cache=True,
+                    past_key_values=past_key_values,
+                    return_dict=True,
+                    output_attentions=True,
+                )
+                logits = outputs.logits[:, -1, :]
+                log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
+                prob = torch.exp(log_probs[0, token_id]).item()
+
+                past_key_values = outputs.past_key_values
+
+                current_states: Dict[int, HiddenState] = {}
+                if recorder.storage:
+                    for layer_idx, states in recorder.storage.items():
+                        if states:
+                            current_states[layer_idx] = states[-1]
+
+                token_logs.append(
+                    TokenRecorder(
+                        idx=token_id,
+                        step=step,
+                        token=self.tokenizer.decode([token_id]),
+                        prob=prob,
+                        log_prob=log_probs[0, token_id].item(),
+                        hidden_states=current_states,
+                        input_ids=generated_ids.cpu(),
+                    )
+                )
+
+                next_token = torch.tensor([[token_id]], device=device)
+                generated_ids = torch.cat([generated_ids, next_token], dim=-1)
+
+        return token_logs[-1]
+
+    @torch.no_grad()
+    def probe_state(
+        self,
+        trace: TraceRecorder,
+        step_idx: int,
+        layer_idx: Optional[int] = None,
+        max_new_tokens: int = 64,
+        cached_state: Optional[HiddenState] = None,
+        cached_trajectory: Optional[Trajectory] = None,
+    ) -> Dict[str, object]:
+        """
+        Run a lightweight explanatory probe over a token's hidden state.
+        Returns natural language explanation and the logit-lens distribution for the chosen layer.
+        """
+
+        if cached_state is not None:
+            state_obj = cached_state
+            trajectory = cached_trajectory
+            layer_ids = sorted(trajectory.to_dict().keys()) if trajectory else [layer_idx or 0]
+            target_layer = layer_idx if layer_idx is not None else layer_ids[-1]
+        else:
+            token_state = self.compute_hidden_states_for_step(trace, step_idx, layers=None)
+            trajectory: Trajectory = token_state.trajectory
+            layer_ids = sorted(trajectory.to_dict().keys())
+            target_layer = layer_idx if layer_idx is not None else layer_ids[-1]
+            state_obj = trajectory.get_by_layer(target_layer)
+            if state_obj is None:
+                raise RuntimeError(f"No hidden state captured for layer {target_layer}")
+
+        logits_top = self._decode_hidden_state(state_obj.get_value(), top_k=10)
+
+        # Build probe prompt
+        context_text = trace.question + "".join([t.token for t in trace.tokenlist[: step_idx + 1]])
+        top_tokens_str = ", ".join([f"{tok} ({prob:.3f})" for tok, prob in logits_top[:5]])
+        probe_prompt = (
+            "[Context]\n"
+            f"{context_text}\n\n"
+            "[Current State]\n"
+            f"Layer {target_layer} latent suggests: {top_tokens_str}.\n"
+            "The reasoning behind this is:"
+        )
+
+        inputs = self.tokenizer(probe_prompt, return_tensors="pt").to(self.model.device)
+        probe_output = self.model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=True,
+            temperature=0.8,
+            top_p=0.9,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        generated_text = self.tokenizer.decode(probe_output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+
+        return {
+            "layer": target_layer,
+            "logit_lens": logits_top,
+            "explanation": generated_text.strip(),
+        }
 
     def _format_prompt(self, question: str) -> str:
         """Apply chat template to the question."""

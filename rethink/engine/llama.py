@@ -196,7 +196,13 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
 
         token_logs: List[TokenRecorder] = []
 
-        with self._recorder.attach(self):
+        if not self.instrumentation_cfg.track_hidden_states:
+            self._recorder.storage.clear()
+
+        recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
+        ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
+
+        with ctx_manager:
             for step, token_id in enumerate(target_ids.tolist()):
                 outputs = super().forward(input_ids=generated_ids, use_cache=True, return_dict=True, output_attentions=True)
                 logits = outputs.logits[:, -1, :]
@@ -205,7 +211,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                 
                 # Extract hidden states for this step
                 current_states = {}
-                if self._recorder.storage:
+                if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
                             # states is now List[HiddenState]
@@ -228,7 +234,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
 
         return TracePack(
             token_logprobs=token_logs,
-            hidden_states=dict(self._recorder.storage),
+            hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
             extra={"prompt_ids": prompt_ids.cpu()},
         )
 
@@ -262,7 +268,10 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
         if generation_kwargs.get("top_p", 1.0) < 1.0:
             logits_warper.append(TopPLogitsWarper(top_p=generation_kwargs["top_p"]))
 
-        with self._recorder.attach(self):
+        recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
+        ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
+
+        with ctx_manager:
             past_key_values = None
             generated_ids = input_ids
             for step in range(generation_kwargs.get("max_new_tokens", 128)):
@@ -293,7 +302,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                 
                 # Extract hidden states for this step
                 current_states = {}
-                if self._recorder.storage:
+                if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
                             # states is now List[HiddenState]
@@ -325,7 +334,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
 
         return TracePack(
             token_logprobs=token_logs,
-            hidden_states=dict(self._recorder.storage),
+            hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
             extra={"prompt_ids": input_ids.cpu()},
         )
 

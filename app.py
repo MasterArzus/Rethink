@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import torch
 import os
 import glob
 import yaml
@@ -12,12 +11,10 @@ import datasets
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from rethink.server.session_manager import SessionManager
-from rethink.server.interactive import InteractiveSession, InteractiveDebugSession
+from rethink.server.interactive import InteractiveSession
 from rethink.server.component import render_token_stream
-from rethink.utils.visualize import generate_attention_html
-from rethink.utils.config import GenerationConfig, ModelConfig, PromptConfig
+from rethink.utils.config import GenerationConfig, PromptConfig
 from st_click_detector import click_detector
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide", page_title="Rethink: LLM Debugger")
 
@@ -146,7 +143,6 @@ if st.sidebar.button("Load Model"):
             st.session_state['model'] = model
             st.session_state['tokenizer'] = tokenizer
             st.session_state['interactive_session'] = InteractiveSession(model, tokenizer)
-            st.session_state['debug_session'] = InteractiveDebugSession(model, tokenizer)
             
             status.update(label="Model loaded successfully!", state="complete", expanded=False)
             
@@ -156,188 +152,228 @@ if st.sidebar.button("Load Model"):
 
 # --- Main Interface ---
 if 'model' in st.session_state:
-    
-    # Debug Mode Toggle
-    debug_mode = st.toggle("Enable Step-by-Step Debug Mode", value=False)
-    
+    session = st.session_state['interactive_session']
+
     # Input Area
     st.header("Input Prompt")
-    
+
     # Apply Prompt Template Logic
     system_prompt = prompt_cfg_data.get("system_prompt", "")
     user_role = prompt_cfg_data.get("user_role", "user")
-    
+
     default_prompt = "Jack sold 48 clips to his friends in April, and then he sold half as many clips in May. How many clips did Jack sell all together in April and May?"
-    
+
     if 'user_input_area' not in st.session_state:
         st.session_state['user_input_area'] = default_prompt
-        
+
     user_input = st.text_area("User Input", key="user_input_area", height=100)
-    
+
     # Construct full prompt based on template type (simplified)
     if prompt_cfg_data.get("template_type") == "chat":
         full_prompt = f"<|begin_of_text|><|start_header_id|>{prompt_cfg_data.get('system_role', 'system')}<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>{user_role}<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
     else:
         full_prompt = f"{system_prompt}\n\nQuestion: {user_input}\nAnswer:"
-        
+
     with st.expander("View Full Prompt"):
         st.code(full_prompt)
 
-    if debug_mode:
-        st.info("Debug interface is being redesigned.")
-    else:
-        # Standard Mode (Existing Logic)
-        if st.button("Generate Trace"):
-            session = st.session_state['interactive_session']
-            
-            # Container for streaming output
-            st.markdown("### Generated Output")
-            stream_placeholder = st.empty()
-            stream_state = {"text": ""}
-            
-            def stream_callback(token):
-                stream_state["text"] += token
-                # Use a cursor to indicate streaming
-                stream_placeholder.markdown(stream_state["text"] + "▌")
-            
-            with st.spinner("Generating trace..."):
-                # Use the configured params
-                # Update controller config
-                session.controller.cfg.prompt = PromptConfig(**prompt_cfg_data)
-                session.controller.cfg.generation = GenerationConfig(**gen_cfg_data)
-                
-                # Re-run with updated config
-                trace, analysis = session.run_initial_inference(
-                    user_input, 
-                    use_template=True, 
-                    max_new_tokens=max_new_tokens,
-                    stream_callback=stream_callback
-                )
-                
-                # Final update without cursor
-                stream_placeholder.markdown(stream_state["text"])
-                
-                st.session_state['trace'] = trace
-                st.session_state['analysis'] = analysis
-                # Reset rethink state
-                st.session_state['rethink_start_index'] = -1
-        
-        # ... Visualization Code (Same as before) ...
-        if 'trace' in st.session_state:
-            trace = st.session_state['trace']
-            analysis = st.session_state['analysis']
-            
-            st.header("Trace Visualization")
-            col_trace, col_analysis = st.columns([0.7, 0.3])
-            
-            selected_idx = st.session_state.get('selected_token_index', 0)
+    if st.button("Generate Trace"):
+        live_stream_placeholder = st.empty()
+        stream_tokens = []
 
-            with col_trace:
-                st.subheader("Token Stream")
-                token_data = []
-                rethink_start = st.session_state.get('rethink_start_index', -1)
-                
-                for i, token in enumerate(trace.tokenlist):
-                    is_critical = False
-                    reason = ""
-                    for interval in analysis:
-                        if interval.start <= i <= interval.end:
-                            is_critical = True
-                            reason = interval.type
-                            break
-                    
-                    is_new = (rethink_start != -1 and i >= rethink_start)
-                    
-                    token_data.append({
-                        "index": i, "token": token.token, "prob": token.prob,
-                        "is_critical": is_critical, "reason": reason,
-                        "is_new": is_new
-                    })
+        def token_stream_callback(token):
+            stream_tokens.append(token)
+            live_stream_placeholder.markdown("".join(stream_tokens) + "▌")
 
-                html_content = render_token_stream(token_data, selected_idx)
-                clicked_id = click_detector(html_content, key="token_stream_click_detector")
-                if clicked_id:
-                    try:
-                        new_idx = int(clicked_id.split("_")[1])
-                        if new_idx != selected_idx:
-                            st.session_state['selected_token_index'] = new_idx
-                            st.rerun()
-                    except: pass
-                
-                st.divider()
-                st.subheader("Global Metrics")
-                df = pd.DataFrame(token_data)
-                fig_prob = px.line(df, x="index", y="prob", title="Token Probability")
-                fig_prob.add_vline(x=selected_idx, line_dash="dash", line_color="red")
-                st.plotly_chart(fig_prob, width='stretch')
+        with st.spinner("Generating trace..."):
+            session.controller.cfg.prompt = PromptConfig(**prompt_cfg_data)
+            session.controller.cfg.generation = GenerationConfig(**gen_cfg_data)
 
-            with col_analysis:
-                st.header("Analysis Panel")
-                if 0 <= selected_idx < len(token_data):
-                    selected_item = token_data[selected_idx]
-                    with st.container(border=True):
-                        st.subheader(f"Token: '{selected_item['token']}'")
-                        st.metric("Probability", f"{selected_item['prob']:.4f}")
-                        if selected_item['is_critical']:
-                            st.error(f"Critical: {selected_item['reason']}")
-                        
-                        if 'analysis_obj' not in st.session_state:
-                             from rethink.analysis.trace_analysis import TraceAnalysis
-                             st.session_state['analysis_obj'] = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
-                        
-                        analyzer = st.session_state['analysis_obj']
-                        with st.spinner("Decoding alternatives..."):
-                            # Pass current temperature to align probabilities
-                            current_temp = float(gen_cfg_data.get("temperature", 1.0))
-                            alts = analyzer.get_token_alternatives(selected_idx, k=10)
-                        if alts:
-                            st.markdown("**Top Alternatives:**")
-                            if 'top_k' in alts:
-                                alt_df = pd.DataFrame(alts['top_k'], columns=["Token", "Prob"])
-                                st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
-                                
-                                # Selection for forcing
-                                alt_options = alt_df["Token"].tolist()
-                                selected_alt_token = st.selectbox("Select alternative to force:", options=alt_options)
-                        
-                        st.divider()
-                        st.markdown("### Intervention")
-                        
-                        col_btn1, col_btn2 = st.columns(2)
-                        with col_btn1:
-                            if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
-                                session = st.session_state['interactive_session']
-                                with st.spinner(f"Rethinking from step {selected_idx}..."):
-                                    new_trace, new_analysis = session.rethink_from_step(
-                                        trace, 
-                                        selected_idx, 
-                                        max_new_tokens=gen_cfg_data.get("max_new_tokens", 128)
-                                    )
-                                    st.session_state['trace'] = new_trace
-                                    st.session_state['analysis'] = new_analysis
-                                    st.session_state['selected_token_index'] = selected_idx
-                                    # Mark where the new generation started
-                                    st.session_state['rethink_start_index'] = selected_idx + 1
-                                    st.rerun()
-                        
-                        with col_btn2:
-                            if alts and st.button("Rethink with Selection", help="Replace current token with selected alternative and regenerate."):
-                                session = st.session_state['interactive_session']
-                                with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
-                                    new_trace, new_analysis = session.rethink_from_step(
-                                        trace, 
-                                        selected_idx, 
-                                        max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
-                                        force_token=selected_alt_token
-                                    )
-                                    st.session_state['trace'] = new_trace
-                                    st.session_state['analysis'] = new_analysis
-                                    st.session_state['selected_token_index'] = selected_idx
-                                    # Mark where the new generation started (including the forced token)
-                                    st.session_state['rethink_start_index'] = selected_idx
-                                    st.rerun()
-                else:
-                    st.info("Select a token.")
+            trace, analysis = session.run_initial_inference(
+                user_input,
+                use_template=True,
+                max_new_tokens=max_new_tokens,
+                stream_callback=token_stream_callback,
+            )
+
+            live_stream_placeholder.markdown("".join(stream_tokens))
+
+            st.session_state['trace'] = trace
+            st.session_state['analysis'] = analysis
+            st.session_state['rethink_start_index'] = -1
+            st.session_state['hidden_state_cache'] = {}
+            st.session_state['probe_cache'] = {}
+            st.session_state['selected_layer'] = None
+            st.session_state.pop('analysis_obj', None)
+
+    if 'trace' in st.session_state:
+        trace = st.session_state['trace']
+        analysis = st.session_state['analysis']
+
+        st.header("Trace Visualization")
+        col_trace, col_analysis = st.columns([0.7, 0.3])
+
+        selected_idx = st.session_state.get('selected_token_index', 0)
+
+        with col_trace:
+            st.subheader("Token Stream")
+            token_data = []
+            rethink_start = st.session_state.get('rethink_start_index', -1)
+
+            for i, token in enumerate(trace.tokenlist):
+                is_critical = False
+                reason = ""
+                for interval in analysis:
+                    if interval.start <= i <= interval.end:
+                        is_critical = True
+                        reason = interval.type
+                        break
+
+                is_new = (rethink_start != -1 and i >= rethink_start)
+
+                token_data.append({
+                    "index": i, "token": token.token, "prob": token.prob,
+                    "is_critical": is_critical, "reason": reason,
+                    "is_new": is_new
+                })
+
+            html_content = render_token_stream(token_data, selected_idx)
+            clicked_id = click_detector(html_content, key="token_stream_click_detector")
+            if clicked_id:
+                try:
+                    new_idx = int(clicked_id.split("_")[1])
+                    if new_idx != selected_idx:
+                        st.session_state['selected_token_index'] = new_idx
+                        st.rerun()
+                except:
+                    pass
+
+            st.divider()
+            st.subheader("Global Metrics")
+            df = pd.DataFrame(token_data)
+            fig_prob = px.line(df, x="index", y="prob", title="Token Probability")
+            fig_prob.add_vline(x=selected_idx, line_dash="dash", line_color="red")
+            st.plotly_chart(fig_prob, width='stretch')
+
+        with col_analysis:
+            st.header("Analysis Panel")
+            if 0 <= selected_idx < len(token_data):
+                selected_item = token_data[selected_idx]
+                with st.container(border=True):
+                    st.subheader(f"Token: '{selected_item['token']}'")
+                    st.metric("Probability", f"{selected_item['prob']:.4f}")
+                    if selected_item['is_critical']:
+                        st.error(f"Critical: {selected_item['reason']}")
+
+                    if 'analysis_obj' not in st.session_state:
+                        from rethink.analysis.trace_analysis import TraceAnalysis
+                        st.session_state['analysis_obj'] = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
+
+                    analyzer = st.session_state['analysis_obj']
+                    with st.spinner("Decoding alternatives..."):
+                        alts = analyzer.get_token_alternatives(selected_idx, k=10)
+                    if alts:
+                        st.markdown("**Top Alternatives:**")
+                        if 'top_k' in alts:
+                            alt_df = pd.DataFrame(alts['top_k'], columns=["Token", "Prob"])
+                            st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
+
+                            alt_options = alt_df["Token"].tolist()
+                            selected_alt_token = st.selectbox("Select alternative to force:", options=alt_options)
+
+                    st.divider()
+                    st.markdown("### Hidden States")
+                    hs_cache = st.session_state.setdefault('hidden_state_cache', {})
+                    probe_cache = st.session_state.setdefault('probe_cache', {})
+
+                    if selected_idx not in hs_cache:
+                        with st.spinner("Computing hidden states for this token..."):
+                            hs_cache[selected_idx] = session.controller.compute_hidden_states_for_step(
+                                trace,
+                                selected_idx,
+                                layers=None,
+                            )
+
+                    token_state = hs_cache.get(selected_idx)
+                    if token_state:
+                        trajectory = token_state.trajectory
+                        layer_ids = sorted(trajectory.to_dict().keys())
+                        if layer_ids:
+                            selected_layer = st.session_state.get('selected_layer')
+                            if selected_layer is None or selected_layer not in layer_ids:
+                                selected_layer = layer_ids[-1]
+                                st.session_state['selected_layer'] = selected_layer
+
+                            st.markdown("Select a layer to inspect:")
+                            grid_size = 8
+                            for row_start in range(0, len(layer_ids), grid_size):
+                                cols = st.columns(min(grid_size, len(layer_ids) - row_start))
+                                for offset, layer_id in enumerate(layer_ids[row_start:row_start + grid_size]):
+                                    with cols[offset]:
+                                        if st.button(f"L{layer_id}", key=f"layer_{selected_idx}_{layer_id}"):
+                                            st.session_state['selected_layer'] = layer_id
+                                            st.rerun()
+
+                            layer_state = trajectory.get_by_layer(selected_layer)
+                            if layer_state:
+                                logit_lens = session.controller._decode_hidden_state(layer_state.get_value(), top_k=10)
+                                lens_df = pd.DataFrame(logit_lens, columns=["Token", "Prob"])
+                                st.markdown(f"**Logit Lens @ Layer {selected_layer}:**")
+                                st.dataframe(lens_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
+
+                                probe_key = f"{selected_idx}_{selected_layer}"
+                                if probe_key not in probe_cache:
+                                    with st.spinner("Running explanation probe..."):
+                                        probe_cache[probe_key] = session.controller.probe_state(
+                                            trace,
+                                            selected_idx,
+                                            layer_idx=selected_layer,
+                                            cached_state=layer_state,
+                                            cached_trajectory=trajectory,
+                                        )
+
+                                probe_result = probe_cache.get(probe_key, {})
+                                st.markdown("**State Explanation:**")
+                                st.write(probe_result.get("explanation", ""))
+                        else:
+                            st.info("No hidden states captured for this token.")
+                    else:
+                        st.info("Hidden state not available for this token.")
+
+                    st.divider()
+                    st.markdown("### Intervention")
+
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
+                            with st.spinner(f"Rethinking from step {selected_idx}..."):
+                                new_trace, new_analysis = session.rethink_from_step(
+                                    trace,
+                                    selected_idx,
+                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128)
+                                )
+                                st.session_state['trace'] = new_trace
+                                st.session_state['analysis'] = new_analysis
+                                st.session_state['selected_token_index'] = selected_idx
+                                st.session_state['rethink_start_index'] = selected_idx + 1
+                                st.rerun()
+
+                    with col_btn2:
+                        if alts and st.button("Rethink with Selection", help="Replace current token with selected alternative and regenerate."):
+                            with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
+                                new_trace, new_analysis = session.rethink_from_step(
+                                    trace,
+                                    selected_idx,
+                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
+                                    force_token=selected_alt_token
+                                )
+                                st.session_state['trace'] = new_trace
+                                st.session_state['analysis'] = new_analysis
+                                st.session_state['selected_token_index'] = selected_idx
+                                st.session_state['rethink_start_index'] = selected_idx
+                                st.rerun()
+            else:
+                st.info("Select a token.")
 
 else:
     st.info("Please load a model to begin.")

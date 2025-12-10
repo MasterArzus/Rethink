@@ -15,8 +15,8 @@ class InteractiveSession:
             cfg = RethinkConfig(
                 dataset=DatasetSlice(name="gsm8k", split="test"), # Default to gsm8k for prompt loading
                 instrumentation=InstrumentationConfig(
-                    track_hidden_states=True,
-                    layers_to_capture=[-1], # Capture last layer by default for efficiency
+                    track_hidden_states=False,
+                    layers_to_capture=[-1], # Hidden states will be recomputed lazily per-click
                     max_tokens=512
                 ),
                 output_dir="outputs/interactive_sessions"
