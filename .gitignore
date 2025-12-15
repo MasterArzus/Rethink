@@ -20,3 +20,6 @@ __pycache__/
 dataset/gsm8k/
 dataset/math500/
 dataset/humaneval/
+dataset/hh_rlhf/
+dataset/truthful_qa/
+dataset/stsb/

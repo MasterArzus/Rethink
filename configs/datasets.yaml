@@ -1,3 +1,6 @@
 gsm8k: /root/Rethink/dataset/gsm8k
 math500: /root/Rethink/dataset/math500
 humaneval: /root/Rethink/dataset/humaneval
+hh_rlhf: /root/Rethink/dataset/hh_rlhf
+truthful_qa: /root/Rethink/dataset/truthful_qa
+stsb: /root/Rethink/dataset/stsb

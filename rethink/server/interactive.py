@@ -1,7 +1,10 @@
 import torch
 import json
 import os
+from dataclasses import dataclass
 from datetime import datetime
+from typing import List, Optional
+
 from rethink.engine.controller import RethinkController
 from rethink.recorder.trace_recorder import TraceRecorder
 from rethink.recorder.token_recorder import TokenRecorder
@@ -103,7 +106,7 @@ class InteractiveSession:
         self._analyze_trace()
         return self.current_trace, self.analysis_results
 
-    def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128, force_token=None):
+    def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128, force_token=None, steering_prompt: Optional[str] = None):
         """
         Truncate the trace at step_idx and regenerate from there.
         If force_token is provided, replace the token at step_idx with it.
@@ -137,7 +140,8 @@ class InteractiveSession:
             current_token_text = trace_recorder.tokenlist[step_idx].token
             middle_token_list = [trace_recorder.tokenlist[step_idx]]
         
-        new_full_prompt = base_prompt + prefix_text + current_token_text
+        guide_text = steering_prompt or ""
+        new_full_prompt = base_prompt + prefix_text + current_token_text + guide_text
         
         # 2. Run generation
         # We pass use_template=False because new_full_prompt is already fully formatted
@@ -171,6 +175,91 @@ class InteractiveSession:
         combined_analysis = analyzer.locate_critical_intervals()
         
         return combined_trace, combined_analysis
+
+    @dataclass
+    class BranchResult:
+        trace: TraceRecorder
+        analysis: List[object]
+        label: str
+        meta: dict
+
+    def branch_from_step(
+        self,
+        trace_recorder: TraceRecorder,
+        step_idx: int,
+        k: int = 3,
+        strategy: str = "sample",
+        max_new_tokens: int = 128,
+        steering_prompt: Optional[str] = None,
+    ) -> List["InteractiveSession.BranchResult"]:
+        """
+        Generate K alternative continuations from a given step, optionally with a steering prompt.
+        """
+        k = max(1, min(k, 8))
+
+        base_prompt = trace_recorder.question
+        prefix_tokens = trace_recorder.tokenlist[: step_idx + 1]
+        prefix_text = "".join([t.token for t in prefix_tokens])
+        guide_text = steering_prompt or ""
+        prompt = base_prompt + prefix_text + guide_text
+
+        # Build generation kwargs per strategy
+        def _gen_kwargs(seed_variation: int):
+            if strategy == "beam":
+                return {
+                    "max_new_tokens": max_new_tokens,
+                    "do_sample": True,
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "seed": None,
+                }
+            # default: sample/high-temp
+            return {
+                "max_new_tokens": max_new_tokens,
+                "do_sample": True,
+                "temperature": 1.1,
+                "top_p": 0.9,
+                "seed": None,
+            }
+
+        results: List[InteractiveSession.BranchResult] = []
+        for i in range(k):
+            gen_kwargs = _gen_kwargs(i)
+            trace_pack = self.controller.model.generate_autoregressive_trace(
+                tokenizer=self.controller.tokenizer,
+                prompt=prompt,
+                generation_kwargs=gen_kwargs,
+                stream_callback=None,
+            )
+
+            generated_text = "".join([t.token for t in trace_pack.token_logprobs])
+            new_tokens = trace_pack.token_logprobs
+
+            # Merge prefix tokens with new tokens
+            merged_tokens = prefix_tokens + new_tokens
+            for idx, tok in enumerate(merged_tokens):
+                tok.step = idx
+
+            combined_trace = TraceRecorder(
+                question=trace_recorder.question,
+                answer=prefix_text + generated_text,
+                tokenlist=merged_tokens,
+                metadata=trace_pack.extra,
+            )
+
+            analyzer = TraceAnalysis(combined_trace, self.controller.model, self.controller.tokenizer)
+            combined_analysis = analyzer.locate_critical_intervals()
+
+            results.append(
+                InteractiveSession.BranchResult(
+                    trace=combined_trace,
+                    analysis=combined_analysis,
+                    label=f"Branch {i+1}",
+                    meta={"strategy": strategy},
+                )
+            )
+
+        return results
 
     def run_intervention(self, modified_tokens, start_index):
         """
