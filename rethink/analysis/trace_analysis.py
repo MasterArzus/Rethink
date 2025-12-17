@@ -3,13 +3,14 @@ from typing import Dict, List, Optional, Tuple, Any
 import torch
 import numpy as np
 from rethink.recorder.trace_recorder import TraceRecorder
+from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder
 from rethink.analysis.token_analysis import TokenAnalysis
 
 @dataclass
 class Interval:
     start: int
     end: int
-    type: str  # "divergence", "high_entropy", "low_prob", "high_drift"
+    type: str  # "divergence", "high_entropy", "low_prob", "high_drift", "latent_conflict"
     score: float
     description: str
 
@@ -75,6 +76,97 @@ class TraceAnalysis:
             
         return -1
 
+    def _compute_step_hidden_states(self, step_idx: int) -> Dict[int, Any]:
+        """
+        Re-compute hidden states for a specific step to analyze latent conflicts.
+        """
+        device = self.model.device
+        # Reconstruct input
+        prompt_text = self.trace.question
+        prev_tokens = [t.token for t in self.trace.tokenlist[:step_idx]]
+        full_text = prompt_text + "".join(prev_tokens)
+        
+        inputs = self.tokenizer(full_text, return_tensors="pt").to(device)
+        
+        # We only need the last layer for logit lens
+        # Assuming the model has 'config.num_hidden_layers' or similar
+        num_layers = getattr(self.model.config, "num_hidden_layers", 32)
+        last_layer_idx = num_layers - 1
+        
+        recorder = HiddenStateRecorder(layers=[last_layer_idx]) 
+        
+        with recorder.attach(self.model):
+            with torch.no_grad():
+                # We don't need to generate, just forward
+                self.model(**inputs, output_hidden_states=True)
+        
+        states = {}
+        if recorder.storage:
+            for layer_idx, state_list in recorder.storage.items():
+                if state_list:
+                    # state_list[-1] is the HiddenState object for the last token
+                    states[layer_idx] = state_list[-1]
+                    
+        return states
+
+    def _project_hidden_state(self, hidden_state: torch.Tensor) -> torch.Tensor:
+        state = hidden_state.to(self.model.device)
+        if state.dim() == 2:
+            state = state.unsqueeze(1)
+        
+        # Try to find normalization layer
+        norm_layer = getattr(self.model.model, "norm", None)
+        if norm_layer:
+            normalized = norm_layer(state)
+        else:
+            normalized = state # Fallback
+            
+        return self.model.lm_head(normalized)
+
+    def _decode_hidden_state(self, hidden_state: torch.Tensor, top_k: int = 10) -> List[Tuple[str, float]]:
+        logits = self._project_hidden_state(hidden_state)
+        probs = torch.nn.functional.softmax(logits[0, -1, :], dim=-1)
+        top_probs, top_indices = torch.topk(probs, k=top_k)
+        return [
+            (self.tokenizer.decode([idx.item()]), prob.item())
+            for prob, idx in zip(top_probs, top_indices)
+        ]
+
+    def analyze_latent_conflict(self, step_idx: int) -> Optional[Interval]:
+        token_rec = self.trace.tokenlist[step_idx]
+        
+        # 1. Compute hidden states
+        try:
+            states = self._compute_step_hidden_states(step_idx)
+        except Exception as e:
+            print(f"Warning: Failed to compute hidden states for step {step_idx}: {e}")
+            return None
+
+        if not states:
+            return None
+            
+        # 2. Decode last layer
+        last_layer = max(states.keys())
+        hs = states[last_layer]
+        top_k = self._decode_hidden_state(hs.get_value(), top_k=5)
+        
+        # 3. Check conflict
+        chosen_token = token_rec.token.strip()
+        top_token = top_k[0][0].strip()
+        top_prob = top_k[0][1]
+        
+        # If the chosen token is NOT the top token
+        # And the top token is significantly more probable
+        if chosen_token != top_token and top_prob > token_rec.prob * 1.2:
+             return Interval(
+                start=step_idx,
+                end=step_idx + 1,
+                type="latent_conflict",
+                score=top_prob - token_rec.prob,
+                description=f"Latent Conflict: Model latent preferred '{top_token}' ({top_prob:.2f}) over sampled '{chosen_token}' ({token_rec.prob:.2f})."
+            )
+        return None
+
     def locate_critical_intervals(self, entropy_threshold: float = 2.0, prob_threshold: float = 0.1) -> List[Interval]:
         """
         Identify suspicious or important intervals in the trace.
@@ -83,6 +175,7 @@ class TraceAnalysis:
         1. Divergence: Where did we deviate from the gold standard?
         2. Uncertainty: Where was the model confused (High Entropy)?
         3. Surprisal: Where did the model pick a low-probability token?
+        4. Latent Conflict: Where did the model sample against its own latent preference?
         """
         intervals = []
         
@@ -98,12 +191,11 @@ class TraceAnalysis:
             ))
 
         # 2. Metric-based Analysis (Entropy & Probability)
-        # We need to compute entropy for each token if not already available.
-        # For efficiency, we might just use the recorded prob if entropy isn't pre-calculated.
-        # But TokenAnalysis can compute entropy.
         
-        high_entropy_start = -1
-        
+        # Limit expensive checks to avoid performance hit
+        conflict_checks = 0
+        max_conflict_checks = 5
+
         for i, token_rec in enumerate(self.trace.tokenlist):
             # Check for low probability (Surprisal)
             if token_rec.prob < prob_threshold:
@@ -114,6 +206,13 @@ class TraceAnalysis:
                     score=1.0 - token_rec.prob,
                     description=f"Low probability token '{token_rec.token}' ({token_rec.prob:.4f})"
                 ))
+                
+                # Trigger Latent Conflict Check for low prob tokens
+                if conflict_checks < max_conflict_checks:
+                    conflict = self.analyze_latent_conflict(i)
+                    if conflict:
+                        intervals.append(conflict)
+                        conflict_checks += 1
             
             # Check for high entropy (requires computation, so we do it on demand)
             # Note: This can be slow for long traces. In production, maybe pre-compute or sample.

@@ -13,149 +13,6 @@ from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder, HiddenSta
 from rethink.recorder.token_recorder import TokenRecorder
 
 
-from rethink.engine.debug_strategy import DebugStrategy
-from rethink.recorder.trajectory import Trajectory
-
-class LlamaDebugStrategy(DebugStrategy):
-    """
-    Implementation of DebugStrategy for Llama models.
-    """
-    def __init__(self, model, tokenizer):
-        super().__init__(model, tokenizer)
-        self.past_key_values = None
-        self.current_hidden_states = None
-        self.current_attention_mask = None
-        self.current_position_ids = None
-        self.current_position_embeddings = None
-        self.current_logits = None
-
-    def start_generation(self, prompt: str):
-        self.full_text = prompt
-        self.current_input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids.to(self.model.device)
-        
-        # Initialize PKV container
-        num_layers = self._get_total_layers()
-        self.past_key_values = [None] * num_layers
-        
-        # Initial Forward Start
-        self.current_hidden_states, self.current_attention_mask, self.current_position_ids, self.current_position_embeddings = \
-            self.model.debug_forward_start(self.current_input_ids, None)
-        
-        self.current_trajectory = Trajectory()
-        self.status = "running"
-
-    def step_layer(self) -> Dict[str, Any]:
-        if self.status != "running":
-            return self.get_state()
-
-        layer_idx = self.current_trajectory.current_layer_count()
-        num_layers = self._get_total_layers()
-
-        if layer_idx < num_layers:
-            # Run one layer
-            self.current_hidden_states, new_pkv, attn_weights = self.model.debug_forward_layer(
-                layer_idx,
-                self.current_hidden_states,
-                self.current_attention_mask,
-                self.current_position_ids,
-                self.past_key_values,
-                position_embeddings=self.current_position_embeddings
-            )
-            
-            # Update PKV for this layer
-            self.past_key_values[layer_idx] = new_pkv
-            
-            # Record state
-            # Note: We record the state AFTER the layer execution
-            attn_data = {}
-            if attn_weights is not None:
-                attn_data["attn_weights"] = attn_weights.clone().detach().cpu()
-                
-            state = HiddenState(
-                layer_idx=layer_idx, 
-                value=self.current_hidden_states.clone().detach().cpu(),
-                attention_data=attn_data
-            )
-            self.current_trajectory.add(state)
-        
-        if self.current_trajectory.current_layer_count() >= num_layers:
-            # Finished all layers, run head
-            self.current_logits = self.model.debug_forward_end(self.current_hidden_states)
-            pass
-
-        return self.get_state()
-
-    def finish_token(self) -> Dict[str, Any]:
-        while self.status == "running" and self.current_trajectory.current_layer_count() < self._get_total_layers():
-            self.step_layer()
-        return self.get_state()
-
-    def sample_next_token(self) -> Dict[str, Any]:
-        if self.current_logits is None:
-            self.finish_token()
-            if self.current_logits is None:
-                return self.get_state()
-            
-        # Simple greedy for debug
-        next_token_logits = self.current_logits[:, -1, :]
-        next_token_id = torch.argmax(next_token_logits, dim=-1).item()
-        
-        token_str = self.tokenizer.decode([next_token_id])
-        
-        # Calculate probs for recording
-        probs = torch.nn.functional.softmax(next_token_logits, dim=-1)
-        prob = probs[0, next_token_id].item()
-        log_prob = torch.log(probs[0, next_token_id]).item()
-
-        # Archive current step
-        step_idx = len(self.history)
-        recorder = TokenRecorder(
-            idx=next_token_id,
-            step=step_idx,
-            token=token_str,
-            prob=prob,
-            log_prob=log_prob,
-            hidden_states=self.current_trajectory,
-            input_ids=self.current_input_ids.cpu()
-        )
-        self.history.append(recorder)
-        self.full_text += token_str
-        
-        # Prepare for next token
-        next_input_ids = torch.tensor([[next_token_id]], device=self.model.device)
-        self.current_input_ids = next_input_ids
-        
-        # Reset for next pass
-        self.current_hidden_states, self.current_attention_mask, self.current_position_ids, self.current_position_embeddings = \
-            self.model.debug_forward_start(self.current_input_ids, tuple(self.past_key_values))
-            
-        self.current_trajectory = Trajectory()
-        self.current_logits = None
-        
-        # Check EOS
-        if next_token_id == self.tokenizer.eos_token_id:
-            self.status = "finished"
-            
-        return self.get_state()
-
-    def _update_internal_hidden_state(self, new_value: torch.Tensor):
-        # Ensure device match
-        self.current_hidden_states = new_value.to(self.model.device)
-
-    def _get_total_layers(self) -> int:
-        return len(self.model.model.layers)
-
-    def _preview_current_token(self) -> str:
-        if self.current_hidden_states is None:
-            return ""
-        # Try to project current state
-        try:
-            logits = self.model.debug_forward_end(self.current_hidden_states)
-            tid = torch.argmax(logits[0, -1]).item()
-            return self.tokenizer.decode([tid])
-        except:
-            return ""
-
 
 @dataclass
 class TracePack:
@@ -204,7 +61,12 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
 
         with ctx_manager:
             for step, token_id in enumerate(target_ids.tolist()):
-                outputs = super().forward(input_ids=generated_ids, use_cache=True, return_dict=True, output_attentions=True)
+                outputs = super().forward(
+                    input_ids=generated_ids, 
+                    use_cache=True, 
+                    return_dict=True, 
+                    output_attentions=self.instrumentation_cfg.track_attentions
+                )
                 logits = outputs.logits[:, -1, :]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 prob = torch.exp(log_probs[0, token_id]).item()
@@ -280,7 +142,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                     use_cache=True,
                     past_key_values=past_key_values,
                     return_dict=True,
-                    output_attentions=True,
+                    output_attentions=self.instrumentation_cfg.track_attentions,
                 )
                 next_token_logits = outputs.logits[:, -1, :]
                 past_key_values = outputs.past_key_values

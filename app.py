@@ -6,7 +6,7 @@ import glob
 import yaml
 import sys
 import datasets
-
+import uuid
 # Add the root directory to sys.path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
@@ -173,7 +173,15 @@ if 'model' in st.session_state:
 
     # Construct full prompt based on template type (simplified)
     if prompt_cfg_data.get("template_type") == "chat":
-        full_prompt = f"<|begin_of_text|><|start_header_id|>{prompt_cfg_data.get('system_role', 'system')}<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>{user_role}<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        if hasattr(st.session_state['tokenizer'], "apply_chat_template") and st.session_state['tokenizer'].chat_template:
+            messages = [
+                {"role": prompt_cfg_data.get('system_role', 'system'), "content": system_prompt},
+                {"role": user_role, "content": user_input}
+            ]
+            full_prompt = st.session_state['tokenizer'].apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        else:
+            # Fallback to Llama 3 style if no chat template found (legacy behavior)
+            full_prompt = f"<|begin_of_text|><|start_header_id|>{prompt_cfg_data.get('system_role', 'system')}<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>{user_role}<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
     else:
         full_prompt = f"{system_prompt}\n\nQuestion: {user_input}\nAnswer:"
 
@@ -208,12 +216,14 @@ if 'model' in st.session_state:
             st.session_state['probe_cache'] = {}
             st.session_state['selected_layer'] = None
             st.session_state.pop('analysis_obj', None)
+            st.session_state['selected_token_index'] = 0
+            st.session_state['trace_id'] = str(uuid.uuid4())
 
     if 'trace' in st.session_state:
         trace = st.session_state['trace']
         analysis = st.session_state['analysis']
 
-        st.header("Trace Visualization")
+        st.header("Token Trace")
 
         selected_idx = st.session_state.get('selected_token_index', 0)
 
@@ -239,7 +249,8 @@ if 'model' in st.session_state:
             })
 
         html_content = render_token_stream(token_data, selected_idx)
-        clicked_id = click_detector(html_content, key="token_stream_click_detector")
+        trace_id = st.session_state.get('trace_id', 'default')
+        clicked_id = click_detector(html_content, key=f"token_stream_click_detector_{trace_id}")
         if clicked_id:
             try:
                 new_idx = int(clicked_id.split("_")[1])

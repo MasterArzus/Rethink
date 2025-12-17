@@ -10,10 +10,10 @@ def load_model_and_tokenizer(model_name_or_path):
     Load the model and tokenizer. Cached by Streamlit to avoid reloading.
     """
     print(f"Loading model from {model_name_or_path}...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
     
     # Detect model architecture
-    config = AutoConfig.from_pretrained(model_name_or_path)
+    config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
     architectures = config.architectures if config.architectures else []
     
     model_class = None
@@ -36,7 +36,8 @@ def load_model_and_tokenizer(model_name_or_path):
         model_name_or_path,
         torch_dtype=torch.float16,
         device_map="auto",
-        attn_implementation="eager"
+        attn_implementation="eager",
+        trust_remote_code=True
     )
     
     print("Model loaded successfully.")

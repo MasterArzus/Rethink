@@ -87,6 +87,9 @@ class InteractiveSession:
         # Add <|eot_id|> for Llama 3 if present
         if "<|eot_id|>" in self.controller.tokenizer.get_vocab():
             terminators.append(self.controller.tokenizer.convert_tokens_to_ids("<|eot_id|>"))
+        # Add <|im_end|> for Qwen if present
+        if "<|im_end|>" in self.controller.tokenizer.get_vocab():
+            terminators.append(self.controller.tokenizer.convert_tokens_to_ids("<|im_end|>"))
             
         # Generate and record
         trace_pack = self.controller.model.generate_autoregressive_trace(
@@ -320,37 +323,12 @@ class InteractiveSession:
 
     def _analyze_trace(self):
         if self.current_trace:
-            analyzer = TraceAnalysis(self.current_trace, self.controller.model, self.controller.tokenizer)
+            analyzer = TraceAnalysis(
+                trace=self.current_trace,
+                model=self.controller.model,
+                tokenizer=self.controller.tokenizer,
+                reference_trace=None # Or pass if available
+            )
             self.analysis_results = analyzer.locate_critical_intervals()
-
-
-from rethink.engine.llama import LlamaDebugStrategy
-
-class InteractiveDebugSession:
-    def __init__(self, model, tokenizer):
-        # In a real scenario, we would detect the model type and instantiate the correct strategy
-        # For now, we default to Llama
-        self.strategy = LlamaDebugStrategy(model, tokenizer)
-
-    def start(self, prompt):
-        self.strategy.start_generation(prompt)
-        return self.strategy.get_state()
-
-    def step_layer(self):
-        return self.strategy.step_layer()
-
-    def finish_token(self):
-        return self.strategy.finish_token()
-
-    def sample_and_next(self):
-        return self.strategy.sample_next_token()
-    
-    @property
-    def generated_tokens(self):
-        return [r.token for r in self.strategy.history]
-    
-    @property
-    def current_trajectory(self):
-        return self.strategy.current_trajectory
 
 

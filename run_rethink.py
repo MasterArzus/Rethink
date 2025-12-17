@@ -127,7 +127,7 @@ def load_benchmark_examples(
 
 def prepare_model(model_config: ModelConfig, device: torch.device) -> tuple:
 	model_name = model_config.model_name_or_path
-	tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+	tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, trust_remote_code=True)
 	tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token is None else tokenizer.pad_token
 	tokenizer.padding_side = "left"
 
@@ -149,7 +149,8 @@ def prepare_model(model_config: ModelConfig, device: torch.device) -> tuple:
 	model = model_class.from_pretrained(
 		model_name,
 		torch_dtype=getattr(torch, model_config.torch_dtype) if hasattr(torch, model_config.torch_dtype) else torch.float16,
-		attn_implementation=model_config.attn_implementation
+		attn_implementation=model_config.attn_implementation,
+		trust_remote_code=True
 	)
 	model.to(device)
 	model.eval()

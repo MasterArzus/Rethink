@@ -160,7 +160,7 @@ class RethinkController:
         trace: TraceRecorder,
         step_idx: int,
         layer_idx: Optional[int] = None,
-        max_new_tokens: int = 64,
+        max_new_tokens: int = 256,
         cached_state: Optional[HiddenState] = None,
         cached_trajectory: Optional[Trajectory] = None,
     ) -> Dict[str, object]:
@@ -188,13 +188,26 @@ class RethinkController:
         # Build probe prompt
         context_text = trace.question + "".join([t.token for t in trace.tokenlist[: step_idx + 1]])
         top_tokens_str = ", ".join([f"{tok} ({prob:.3f})" for tok, prob in logits_top[:5]])
-        probe_prompt = (
-            "[Context]\n"
-            f"{context_text}\n\n"
-            "[Current State]\n"
-            f"Layer {target_layer} latent suggests: {top_tokens_str}.\n"
-            "The reasoning behind this is:"
+
+        system_msg = "You are an expert in interpreting language model internal states. Analyze the provided context and the current layer's token predictions to explain the model's reasoning."
+        user_msg = (
+            f"Context: {context_text}\n\n"
+            f"At the current step, the model's internal state at Layer {target_layer} is most strongly predicting these tokens: {top_tokens_str}.\n"
+            "Explain why the model is focusing on these tokens given the context. Keep the explanation concise."
         )
+
+        if hasattr(self.tokenizer, "apply_chat_template") and self.tokenizer.chat_template:
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg}
+            ]
+            probe_prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        else:
+            probe_prompt = (
+                f"{system_msg}\n\n"
+                f"{user_msg}\n\n"
+                "Explanation:"
+            )
 
         inputs = self.tokenizer(probe_prompt, return_tensors="pt").to(self.model.device)
         probe_output = self.model.generate(
