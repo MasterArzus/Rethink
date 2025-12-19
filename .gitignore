@@ -23,3 +23,4 @@ dataset/humaneval/
 dataset/hh_rlhf/
 dataset/truthful_qa/
 dataset/stsb/
+dataset/hydrology_qa

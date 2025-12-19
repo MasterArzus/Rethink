@@ -1,0 +1,199 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{Rethink: An Interactive, Process-Oriented Steerable Framework for Large Language Model Reasoning \\
+\large Opening the Black Box of Reasoning: Fine-Grained Interactive Intervention via Token-Level Rethinking}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+The prevailing paradigm in human-computer interaction for Large Language Models (LLMs) is conversational dialogue (e.g., OpenAI, 2023). Within this paradigm, extensive research has been conducted on long-context understanding, multi-turn iteration, and in-context learning to align model outputs with user needs and human values (Ouyang et al., 2022; Bai et al., 2022). While these automated alignment strategies provide valuable algorithms and metrics, they often lack granular human involvement, making it difficult to align with the diverse and specific preferences of individual users.
+
+In both academic testing and real-world applications, users frequently encounter scenarios where they must correct specific parts of a generated response (e.g., "This part is wrong, please modify it"). However, current conversational models typically treat the entire previous dialogue—including the erroneous segments—as context. This leads to two critical issues during re-generation: \textbf{Error Propagation} and \textbf{Ambiguity in Feedback}. When a user simply states that an output is "incorrect," the model often fails to discern the precise source of the error—whether it is a logical fallacy, a calculation error, or a factual hallucination. Consequently, the model may continue to hallucinate or fail to attend to the specific correction required, leading to \textbf{Hallucination Accumulation}. Furthermore, re-generating the entire response to fix a local error results in significant computational inefficiency and token wastage.
+
+To address these challenges, we argue that effective debugging requires shifting the paradigm from \textbf{"black-box prompting"} to \textbf{"glass-box steering."} Merely asking a model to "try again" is insufficient when the model lacks introspection into \textit{why} it failed. Instead, users need a mechanism to inspect the model's internal decision-making process and intervene precisely at the point of divergence.
+
+Based on this insight, we propose \textbf{Rethink}, an interactive framework for \textbf{Fine-Grained Inference-Time Intervention}. Rethink bridges the gap between mechanistic interpretability and human intent by visualizing internal signals—such as token-level entropy and logit distributions—to expose the model's uncertainty. Crucially, it empowers users to act as a "surgeon," pinpointing the exact token where reasoning diverges. This \textbf{"Interactive Activation Steering"} capability allows users to physically truncate erroneous paths in the KV cache, effectively blocking error propagation and achieving precise alignment with human logic.
+
+In summary, our contributions are as follows:
+\begin{enumerate}
+    \item \textbf{Paradigm Shift:} We identify the limitations of coarse-grained conversational correction and propose a fine-grained, process-oriented debugging paradigm that resolves feedback ambiguity.
+    \item \textbf{Framework:} We introduce Rethink, a modular system that operationalizes mechanistic interpretability tools (Logit Lens, Entropy) into an interactive steering interface.
+    \item \textbf{Methodology:} We formalize the "Interactive Activation Steering" mechanism and propose diagnostic metrics (e.g., Suspicion Score) to guide human intervention, demonstrating effectiveness in both reasoning accuracy and token efficiency.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{From Coarse-Grained Dialogue to Fine-Grained Interaction}
+Human-AI interaction has evolved from simple prompting to more granular collaboration. Early co-authoring tools like \textit{Wordcraft} (Coenen et al., 2021) and \textit{CoAuthor} (Lee et al., 2022) allowed users to edit text or request infilling, but these interactions were limited to the surface level (text editing). In the coding domain, \textit{Debug-gym} (Gero et al., 2023) introduced interactive debugging via test cases. However, these methods treat the model largely as a black box—users can modify the \textit{output}, but cannot inspect or steer the \textit{internal process} that led to errors. \textbf{Rethink advances this lineage by providing a "glass-box" interface}, enabling users to interact not just with the generated text, but with the underlying probability distributions and hidden states.
+
+\subsection{Inference-Time Steering: Automated vs. Interactive}
+Recent research focuses on steering model behavior during inference without parameter updates.
+\begin{itemize}
+    \item \textbf{Automated Search \& Backtracking:} Methods like \textit{Tree of Thoughts (ToT)} (Yao et al., 2023) and \textit{RAIN} (Li et al., 2023) introduce backtracking mechanisms to discard low-quality paths. However, they rely on the model's self-evaluation, which is prone to hallucination.
+    \item \textbf{Activation Steering:} Techniques like \textit{Inference-Time Intervention (ITI)} (Li et al., 2024) and \textit{Activation Engineering} (Turner et al., 2023) modify internal activation vectors to elicit truthful behaviors. While effective, these methods typically apply a static, global intervention direction.
+\end{itemize}
+\textbf{Rethink's Position:} We propose \textbf{Interactive Activation Steering}. Unlike RAIN, we replace unreliable self-evaluation with precise human judgment. Unlike ITI, we replace static global interventions with dynamic, local interventions (token-level truncation and resampling), allowing for context-aware correction of complex reasoning chains.
+
+\section{Preliminary}
+
+\subsection{Autoregressive Generation \& State Space}
+We model the generation process as a trajectory through a state space. At time step $t$, the model state $S_t$ consists of the Key-Value (KV) cache of all preceding tokens: $S_t = \{(K_i, V_i)\}_{i=1}^{t-1}$. The probability of the next token $y_t$ is conditioned on this state and the current input $x$:
+\begin{equation}
+ P(y_t | y_{<t}, x) = \text{softmax}(W_U \cdot f(S_t, y_{t-1})) 
+\end{equation}
+where $f$ is the Transformer forward pass and $W_U$ is the unembedding matrix.
+
+\subsection{Intervention Operators}
+Standard generation is a linear extension of the trajectory: $S_{t+1} = S_t \cup \{(K_t, V_t)\}$.
+In Rethink, we define an \textbf{Intervention Operator} $\mathcal{I}(S_t, a)$ that modifies the trajectory based on user action $a$:
+\begin{enumerate}
+    \item \textbf{Truncation (Rewind):} If the user rejects token $y_t$, we perform a \textbf{KV Cache Slicing} operation. The state is reset to $S_t$, physically discarding all subsequent computations ($S_{>t} \leftarrow \emptyset$).
+    \begin{equation}
+     \mathcal{I}(S_{t+k}, \text{truncate}(t)) = S_t 
+    \end{equation}
+    \item \textbf{Steering (Resample):} The user can force the selection of an alternative token $y'_t$ (e.g., from the top-k logits). This branches the trajectory into a new path:
+    \begin{equation}
+     S'_{t+1} = S_t \cup \{(K'_t, V'_t)\} \quad \text{where } y_t = y'_t 
+    \end{equation}
+\end{enumerate}
+
+This formulation highlights that Rethink operates directly on the \textbf{memory state (KV Cache)} of the model, ensuring that interventions are mathematically exact and computationally efficient (avoiding re-computation of the prefix).
+
+\section{Methods}
+
+\subsection{Problem Formulation}
+We define the language model generation process as $P(y_t | y_{<t}, x)$.
+The goal of the debugging task is: given a trajectory containing errors $Y_{err}$, find the time step $t^*$ where the error occurs, and through intervention $Action(t^*)$, guide the model to generate a corrected trajectory $Y_{corr}$, such that $Reward(Y_{corr}) > Reward(Y_{err})$.
+
+\subsection{The Rethink Framework}
+We introduce the three core modules of Rethink and their data flow:
+\begin{enumerate}
+    \item \textbf{Generator \& Recorder:} Responsible for autoregressive generation and capturing intermediate states (Hidden States, Logits).
+    \item \textbf{Analyzer (Diagnostic Module):} Responsible for computing diagnostic metrics.
+    \begin{itemize}
+        \item \textit{Entropy Analysis:} Define $H(y_t) = -\sum p(y_t) \log p(y_t)$ as the uncertainty metric.
+        \item \textit{Semantic Evolution (Logit Lens):} Define layer-wise prediction difference $D(L_i, L_j)$ to quantify semantic drift.
+    \end{itemize}
+    \item \textbf{Controller (Intervention Module):} Provides the interactive interface.
+    \begin{itemize}
+        \item \textit{Truncate \& Resample:} $y_{>t} \leftarrow \text{Generate}(y_{\le t})$.
+        \item \textit{Alternative Selection:} User manually selects $y'_t \in \text{TopK}(P(y_t))$ to replace the original token.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Diagnostic Metrics}
+We describe how to use Token-level metrics to automatically discover potential error points.
+\begin{itemize}
+    \item Define \textbf{Suspicion Score}: Combining entropy and layer-wise consistency to automatically highlight possible error tokens.
+    \begin{equation}
+     S(t) = \alpha \cdot \text{Norm}(H(t)) + \beta \cdot \text{Drift}(t) 
+    \end{equation}
+\end{itemize}
+
+\subsection{Interactive Steering Mechanism}
+We describe the specific process of user interaction:
+\begin{enumerate}
+    \item \textbf{Visualization:} How the system maps $S(t)$ to a heatmap.
+    \item \textbf{Action:} After the user clicks $y_t$, how the system rolls back the KV Cache and resets the generation state (Technical detail: KV Cache Slicing).
+\end{enumerate}
+
+\section{Experiments}
+
+To comprehensively evaluate the effectiveness, efficiency, and potential in alignment tasks of the Rethink framework, we designed the following four Research Questions (RQs) for experimental verification.
+
+\subsection{RQ1: Effectiveness}
+\textbf{Can Rethink effectively improve the accuracy of reasoning tasks?}
+Aims to prove that the "human-machine collaboration" mode is superior to "pure model generation" or "coarse-grained retry" in solving complex reasoning problems.
+
+\begin{itemize}
+    \item \textbf{Datasets:} GSM8K (Mathematics), Math500 (Harder Math), HumanEval (Code Generation - Optional).
+    \item \textbf{Baselines:}
+    \begin{enumerate}
+        \item \textbf{Standard Generation (Zero-shot):} Model directly generates via greedy decoding or sampling.
+        \item \textbf{Self-Correction (Prompting):} After the model generates an error, it self-corrects via a prompt like "The answer is wrong, please try again".
+        \item \textbf{Best-of-N:} Generate N trajectories and select the best answer via majority voting or a scoring model (simulating brute-force search).
+    \end{enumerate}
+    \item \textbf{Ours (Rethink):}
+    \begin{itemize}
+        \item \textbf{Human-Guided Intervention:} At the first step or token where an error appears in the model's reasoning trajectory, a human expert (or simulated strategy) clicks to truncate and trigger regeneration.
+    \end{itemize}
+    \item \textbf{Metrics:}
+    \begin{itemize}
+        \item \textbf{Pass@1 Accuracy:} Accuracy of the final answer.
+        \item \textbf{Correction Success Rate (CSR):} The proportion of successfully corrected items in the set of questions that the Baseline got wrong, after Rethink intervention.
+    \end{itemize}
+    \item \textbf{Hypothesis:} Rethink's CSR is significantly higher than Self-Correction, proving that "targeted error removal" is more effective at blocking error propagation than "blind retry".
+\end{itemize}
+
+\subsection{RQ2: Efficiency}
+\textbf{Does Rethink save more computational resources compared to traditional interaction?}
+Aims to respond to the "Token wastage" issue mentioned in the Introduction, proving the efficiency of fine-grained intervention.
+
+\begin{itemize}
+    \item \textbf{Setup:} Record the total token generation amount required to correct an error sample until it is correct.
+    \item \textbf{Comparison:}
+    \begin{itemize}
+        \item \textbf{Method A (Full Regeneration):} User discovers error -> inputs instruction -> model regenerates full text.
+        \item \textbf{Method B (Rethink):} User discovers error -> clicks Token -> model generates only the subsequent part (Completion).
+    \end{itemize}
+    \item \textbf{Metrics:}
+    \begin{itemize}
+        \item \textbf{Token Saving Rate (TSR):} $TSR = \frac{Tokens_{Regen} - Tokens_{Rethink}}{Tokens_{Regen}} \times 100\%$.
+        \item \textbf{Interaction Turns:} Number of interaction turns required to achieve the goal.
+    \end{itemize}
+    \item \textbf{Hypothesis:} Rethink can save 30\%-50\% of token overhead, especially in long Chain-of-Thought (CoT) scenarios.
+\end{itemize}
+
+\subsection{RQ3: Interpretability \& Utility}
+\textbf{Can visualization metrics (Entropy/Logits) assist humans in locating errors more precisely?}
+Aims to verify whether the "white-box" information (Entropy Heatmap, Logit Lens) provided by the system has practical guiding significance.
+
+\begin{itemize}
+    \item \textbf{Ablation Study:}
+    \begin{itemize}
+        \item \textbf{Setting 1 (Blind Rethink):} Interface only shows text, no Entropy heatmap or Logit Lens candidates. User intervenes based solely on semantic intuition.
+        \item \textbf{Setting 2 (Full Rethink):} Interface shows full visualization information (high entropy areas highlighted, Logit Lens candidates displayed).
+    \end{itemize}
+    \item \textbf{Task:} Given a set of reasoning trajectories containing errors, ask users (or annotators) to correct them as quickly as possible.
+    \item \textbf{Metrics:}
+    \begin{itemize}
+        \item \textbf{Localization Accuracy:} Distance between the user's first click position and the true error source (Root Cause).
+        \item \textbf{Trials to Success:} Average number of clicks a user needs to try to fix a case.
+    \end{itemize}
+    \item \textbf{Hypothesis:} With visualization assistance enabled, users can find the "lesion" of the error faster, and the number of clicks is significantly reduced.
+\end{itemize}
+
+\subsection{RQ4: Alignment \& Safety (Extended Experiment)}
+\textbf{How does Rethink perform on "Value Alignment" tasks?}
+Aims to elevate the paper's standing, demonstrating the framework's generality in the Safety/Alignment domain.
+
+\begin{itemize}
+    \item \textbf{Datasets:} TruthfulQA (Hallucination), HH-RLHF (Harmlessness).
+    \item \textbf{Scenario:} Jailbreak attacks or factual error correction.
+    \item \textbf{Operation:} When the model starts outputting harmful content (e.g., "The first step to make a bomb...") or hallucinations, use Rethink to intervene at the first harmful token (select another token with lower probability but safe, or truncate and rewrite).
+    \item \textbf{Metrics:}
+    \begin{itemize}
+        \item \textbf{Harmlessness Rate:} Proportion of safe outputs after intervention.
+        \item \textbf{Truthfulness Score:} Factual accuracy score of outputs after intervention.
+    \end{itemize}
+    \item \textbf{Case Study:} Show Logit Lens screenshots, comparing the evolution of the model's Top-1 (harmful/wrong) vs Top-2 (safe/correct) across layers, proving that Rethink can serve as an effective tool for "Inference-time Alignment".
+\end{itemize}
+
+\section{Conclusion}
+The construction of the Rethink framework is based on the philosophy of \textbf{"Software Engineering for AI"} and \textbf{"White-box Steering"}: When generating with large models, can we add breakpoints, test step-by-step generation, and understand the internal data structures just like in an IDE? Based on this idea, we constructed the Rethink framework to reduce the cost for users to debug model-generated content. This conversational human-computer interaction paradigm gives users the ability to understand deeply, providing higher controllable generation capabilities and interpretability.
+
+\section{Limitations}
+Due to time and personnel constraints, this work has not built a massive and complete system like LLaMA Factory, but rather a demo that can be reproduced at any time. This work has not yet adapted to a series of new models, nor has it built a runtime framework suitable for multiple environments. Since this work involves the storage of layer/logits data structures, the demand for running memory and parallel computing memory is large, requiring increased computational resources. This work is human-in-the-loop, which has a certain labor cost compared to automated model methods.
+
+\section{Future Work}
+The interaction paradigm of this work can serve as a selection mode provided by the model to the user. For those with high requirements for the reasoning process and preference alignment, this mode can be chosen for debugging. This work can further improve the capabilities of judgment and recommendation algorithms, providing users with fine-grained, personalized analysis and suggestions.
+
+\end{document}

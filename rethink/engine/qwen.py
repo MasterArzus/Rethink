@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import torch
 from transformers import Qwen2ForCausalLM
@@ -51,16 +51,27 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
 
         token_logs: List[TokenRecorder] = []
 
-        with self._recorder.attach(self):
+        if not self.instrumentation_cfg.track_hidden_states:
+            self._recorder.storage.clear()
+
+        recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
+        ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
+
+        with ctx_manager:
             for step, token_id in enumerate(target_ids.tolist()):
-                outputs = super().forward(input_ids=generated_ids, use_cache=True, return_dict=True)
+                outputs = super().forward(
+                    input_ids=generated_ids, 
+                    use_cache=True, 
+                    return_dict=True,
+                    output_attentions=self.instrumentation_cfg.track_attentions
+                )
                 logits = outputs.logits[:, -1, :]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 prob = torch.exp(log_probs[0, token_id]).item()
                 
                 # Extract hidden states for this step
                 current_states = {}
-                if self._recorder.storage:
+                if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
                             current_states[l] = HiddenState(layer_idx=l, value=states[-1])
@@ -82,7 +93,7 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
 
         return TracePack(
             token_logprobs=token_logs,
-            hidden_states=dict(self._recorder.storage),
+            hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
             extra={"prompt_ids": prompt_ids.cpu()},
         )
 
@@ -92,6 +103,7 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         tokenizer,
         prompt: str,
         generation_kwargs: Optional[dict] = None,
+        stream_callback: Optional[Any] = None,
     ) -> TracePack:
         """Run open-ended decoding while storing statistics for each emitted token."""
 
@@ -115,7 +127,10 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         if generation_kwargs.get("top_p", 1.0) < 1.0:
             logits_warper.append(TopPLogitsWarper(top_p=generation_kwargs["top_p"]))
 
-        with self._recorder.attach(self):
+        recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
+        ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
+
+        with ctx_manager:
             past_key_values = None
             generated_ids = input_ids
             for step in range(generation_kwargs.get("max_new_tokens", 128)):
@@ -124,6 +139,7 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
                     use_cache=True,
                     past_key_values=past_key_values,
                     return_dict=True,
+                    output_attentions=self.instrumentation_cfg.track_attentions,
                 )
                 next_token_logits = outputs.logits[:, -1, :]
                 past_key_values = outputs.past_key_values
@@ -145,16 +161,20 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
                 
                 # Extract hidden states for this step
                 current_states = {}
-                if self._recorder.storage:
+                if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
                             current_states[l] = HiddenState(layer_idx=l, value=states[-1])
+
+                token_str = tokenizer.decode([token_id])
+                if stream_callback:
+                    stream_callback(token_str)
 
                 token_logs.append(
                     TokenRecorder(
                         idx=token_id,
                         step=step,
-                        token=tokenizer.decode([token_id]),
+                        token=token_str,
                         prob=probs[0, token_id].item(),
                         log_prob=torch.log(probs[0, token_id]).item(),
                         hidden_states=current_states,
@@ -172,7 +192,7 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
 
         return TracePack(
             token_logprobs=token_logs,
-            hidden_states=dict(self._recorder.storage),
+            hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
             extra={"prompt_ids": input_ids.cpu()},
         )
 
