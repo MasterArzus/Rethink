@@ -49,6 +49,27 @@ def render_prob_trajectory(report) -> None:
 
     raise NotImplementedError("Visualization layer to be implemented")
 
+def plot_sos_evolution(sos_scores: list[float], tokens: list[str], save_path: str = "sos_plot.png"):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    plt.figure(figsize=(12, 6))
+    plt.plot(sos_scores, marker='o', linestyle='-')
+    plt.title("SOS Score Evolution")
+    plt.xlabel("Token Step")
+    plt.ylabel("SOS Score")
+    
+    # If too many tokens, only show some ticks
+    if len(tokens) > 50:
+        step = len(tokens) // 50
+        plt.xticks(range(0, len(tokens), step), [tokens[i] for i in range(0, len(tokens), step)], rotation=90)
+    else:
+        plt.xticks(range(len(tokens)), tokens, rotation=90)
+        
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+
 
 def render_hidden_state_heatmap(report) -> None:
     """Placeholder function for hidden-state diagnostics."""

@@ -16,9 +16,9 @@ from rethink.server.component import render_token_stream
 from rethink.utils.config import GenerationConfig, PromptConfig
 from st_click_detector import click_detector
 
-st.set_page_config(layout="wide", page_title="Rethink: LLM Debugger")
+st.set_page_config(layout="wide", page_title="Rethink")
 
-st.title("Rethink: Interactive LLM Debugging")
+st.title("LLM Interactive Framework")
 
 # --- Helper Functions ---
 def load_config_files(subdir):

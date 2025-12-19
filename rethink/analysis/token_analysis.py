@@ -156,3 +156,91 @@ class TokenAnalysis:
             return torch.empty(0)
             
         return torch.stack(features)
+
+    def compute_kl_divergence(self, layer_p: int, layer_q: int) -> float:
+        """
+        Computes KL(P || Q) where P is layer_p distribution (usually final) and Q is layer_q distribution (usually mid).
+        High KL means the intermediate layer disagrees with the final layer (Internal Conflict).
+        """
+        analyzer_p = self._get_analysis(layer_p)
+        analyzer_q = self._get_analysis(layer_q)
+        
+        if not analyzer_p or not analyzer_q:
+            return 0.0
+
+        logits_p = analyzer_p._compute_logits().detach().float() # Target (Final)
+        logits_q = analyzer_q._compute_logits().detach().float() # Input (Mid)
+
+        # KLDivLoss expects input in log-probabilities and target in probabilities
+        # KL(P || Q) = sum(P * log(P/Q)) = sum(P * (log P - log Q))
+        # F.kl_div(input, target) = target * (log(target) - input) if reduction is batchmean/sum
+        # Here input=log_probs_q, target=probs_p
+        
+        log_probs_q = F.log_softmax(logits_q, dim=-1)
+        probs_p = F.softmax(logits_p, dim=-1)
+
+        # reduction='batchmean' divides by batch size. Here batch is 1 usually.
+        kl = F.kl_div(log_probs_q, probs_p, reduction='batchmean')
+        return kl.item()
+
+    def compute_semantic_similarity(self, layer_idx: int, k: int = 5) -> float:
+        """
+        Computes the average pairwise cosine similarity of the top-k tokens in the given layer.
+        High similarity means the top candidates are synonyms (Low Ambiguity).
+        Low similarity means the top candidates are semantically distinct (High Ambiguity).
+        """
+        analyzer = self._get_analysis(layer_idx)
+        if not analyzer:
+            return 0.0
+            
+        logits = analyzer._compute_logits().detach()
+        probs = F.softmax(logits, dim=-1)
+        top_probs, top_indices = torch.topk(probs, k, dim=-1)
+        
+        # top_indices shape: (batch, k) or (k,)
+        if top_indices.dim() > 1:
+            top_indices = top_indices[0] # Take first batch item
+            
+        # Get embeddings
+        # Assuming self.model is a HF model or has get_input_embeddings
+        if hasattr(self.model, 'get_input_embeddings'):
+            embeddings = self.model.get_input_embeddings()(top_indices)
+        elif hasattr(self.model, 'model') and hasattr(self.model.model, 'embed_tokens'):
+             embeddings = self.model.model.embed_tokens(top_indices)
+        else:
+            # Fallback or error
+            return 0.0
+            
+        # embeddings shape: (k, hidden_dim)
+        # Normalize embeddings for cosine similarity
+        embeddings = F.normalize(embeddings, p=2, dim=-1)
+        
+        # Compute pairwise similarity matrix: (k, k)
+        sim_matrix = torch.mm(embeddings, embeddings.t())
+        
+        # We want average of off-diagonal elements
+        mask = torch.eye(k, device=sim_matrix.device).bool()
+        sim_matrix.masked_fill_(mask, 0.0)
+        
+        # Number of off-diagonal elements: k*k - k
+        n_pairs = k * k - k
+        if n_pairs == 0:
+            return 1.0
+            
+        avg_sim = sim_matrix.sum() / n_pairs
+        return avg_sim.item()
+
+    def compute_sos_metric(self, layer_idx: int, reference_layer_idx: int) -> float:
+        """
+        Computes Steering Opportunity Score (SOS).
+        SOS = Normalize(KL) * (1 - SemanticSimilarity)
+        """
+        kl = self.compute_kl_divergence(reference_layer_idx, layer_idx)
+        sim = self.compute_semantic_similarity(layer_idx)
+        
+        # Normalize KL. Using tanh to bound it between 0 and 1 (approx).
+        # KL is usually >= 0. 
+        normalized_kl = torch.tanh(torch.tensor(kl)).item()
+        
+        sos = normalized_kl * (1.0 - sim)
+        return sos

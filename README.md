@@ -1,57 +1,80 @@
-# Rethink Debugger
+# Rethink: Bridging the Agency Gap in LLM Reasoning
 
-Prototype toolkit for capturing per-token statistics from reasoning models and contrasting teacher-forced traces with free-form generations.
+**Rethink** is a framework for **Interactive Activation Steering**, designed to empower users with the "Right to Know" (transparency via Logit Lens & Entropy) and the "Right to Choose" (steerability via KV Cache manipulation).
 
-## Quick Start
+This project implements the "Steering Opportunity Score" (SOS) to automatically detect internal conflicts in LLMs and allows for surgical interventions during the generation process.
+
+## 🚀 Quick Start
+
+### 1. Installation
 
 ```bash
+# Create a virtual environment
 python -m venv .venv
 source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
-bash run.sh
 ```
 
-- `run.sh` now defaults to the local `/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct` checkpoint, so no model download is required on this machine. Override it with `MODEL_NAME=... bash run.sh` if you want a different repo or path.
-- `run_rethink.py` exposes the full set of knobs (dataset slice, token limits, logging, etc.). Use `python run_rethink.py --help` to discover every option.
+### 2. Interactive Framework (Streamlit App)
 
-## Cached datasets & offline-friendly runs
+The best way to understand Rethink is to visualize the generation process.
 
-- GSM8K already lives at `~/.cache/huggingface/datasets/gsm8k/main/0.0.0/...`. The runner always tries the cache first and only hits the network if that fails. Pass `--local-files-only` (or export `HF_DATASETS_OFFLINE=1`) to enforce cache-only behavior:
-
-```bash
-HF_DATASETS_OFFLINE=1 python run_rethink.py --local-files-only --limit 2 --setup-only
-```
-
-- If the cache is missing, the script automatically retries online; provide `--use-auth-token <HF_TOKEN>` when GSM8K access requires authentication.
-- To route online fetches through a mirror, export `HF_ENDPOINT=https://hf-mirror.com` before invoking `run.sh` or `run_rethink.py`.
-- Additional dataset knobs (`--dataset-name`, `--dataset-config`, `--split`) let you point at alternative corpora without touching the code.
-
-## Logs and structured outputs
-
-- Every run produces a stem of the form `<model_name>_<dataset_name>_run` (slashes stripped). Logs and summaries are emitted to `outputs/<stem>.log` and `outputs/<stem>.json` by default. Override the stem with `--run-name custom_tag`, or override individual paths via `--log-file` / `--output`.
-- The JSON file contains metadata (model, dataset, token caps, device, timestamp) plus the per-example traces so you can diff experiments offline.
-- Use `--setup-only` to quickly verify dataset/cache/log paths without instantiating the model—handy when testing configuration changes.
-
-Example manual invocation with explicit naming:
-
-```bash
-python run_rethink.py \
-	--model-name /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct \
-	--limit 5 \
-	--run-name llama31_gsm8k_debug \
-	--local-files-only
-```
-## Use app
 ```bash
 streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
+*   **Features**:
+    *   Load models (Llama-3, DeepSeek, etc.).
+    *   Visualize Token-level Entropy and Logit Lens.
+    *   Manually intervene (truncate/rewrite) at specific steps.
 
-## Model 
-```sh
-/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct
-/root/autodl-fs/deepseek-ai/DeepSeek-R1-Distill-Llama-8B
-/root/autodl-fs/Qwen/Qwen3-8B
+### 3. Automated Simulation (RQ1 & RQ2)
+
+To evaluate the efficacy of the **Steering Opportunity Score (SOS)** at scale, use the simulation script. This script automatically triggers an intervention (e.g., "Reject Top-1") when the SOS metric exceeds a threshold.
+
+```bash
+python run_rethink_simulation.py \
+    --model-path /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct \
+    --sos-threshold 0.3 \
+    --prompt "Question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?\nAnswer:"
 ```
 
-## Git commit
-try **git config --global http2.maxrequests 0**
+### 4. Oracle Baseline (Prompting Comparison)
+
+Run the "Oracle Prompting" baseline to compare Steering against traditional Prompt Engineering. This script uses a Judge to detect errors and re-prompt the model.
+
+```bash
+python run_oracle_baseline.py \
+    --model-path /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct \
+    --dataset gsm8k
+```
+
+## ⚙️ Configuration
+
+### Model Configs (`configs/models/`)
+You can define model-specific parameters in YAML files.
+*   `reference_layer_idx`: The layer index used as the "truth" reference for calculating Internal Conflict (KL Divergence).
+    *   Llama-3-8B: `20`
+    *   DeepSeek-R1: `20`
+
+### Metrics (`rethink/analysis/token_analysis.py`)
+*   **Internal Conflict**: KL Divergence between intermediate and final layer logits.
+*   **Semantic Ambiguity**: Cosine similarity of top-k token embeddings.
+*   **SOS**: $\tanh(D_{KL}) \times (1 - \text{Sim})$.
+
+## 📂 Project Structure
+
+*   `app.py`: Streamlit web application for interactive debugging.
+*   `run_rethink_simulation.py`: Script for automated steering experiments (RQ1/RQ2).
+*   `run_oracle_baseline.py`: Script for prompting baselines.
+*   `rethink/`: Core library.
+    *   `analysis/`: Metric calculations (SOS, Entropy).
+    *   `engine/`: Model wrappers and generation controllers.
+    *   `recorder/`: Data structures for capturing hidden states.
+*   `configs/`: Configuration files.
+*   `docs/`: Experimental guides and research notes.
+
+## 📝 Notes
+*   **Cached Datasets**: The runner tries to use cached datasets first. Use `HF_DATASETS_OFFLINE=1` to force offline mode.
+*   **Git Config**: If you encounter connection issues, try `git config --global http2.maxrequests 0`.

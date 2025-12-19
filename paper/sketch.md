@@ -83,6 +83,15 @@ The interaction loop is defined as:
 3.  **Act:** User selects a better alternative or truncates the sequence.
 4.  **Update:** The system rewinds the KV cache to $t^*$ and continues generation from the new state.
 
+### 3.5 Implementation Details
+We implemented the Rethink framework with the following components:
+*   **Metric Calculation (`rethink/analysis/token_analysis.py`):** 
+    *   **Internal Conflict:** Computed via `compute_kl_divergence` between the logits of an intermediate layer (e.g., layer 15) and the final layer (e.g., layer 20/32).
+    *   **Semantic Ambiguity:** Computed via `compute_semantic_similarity` using the cosine similarity of the input embeddings of the top-k tokens.
+    *   **SOS Metric:** $SOS = \tanh(D_{KL}) \times (1 - \text{Sim})$.
+*   **Simulation Engine (`run_rethink_simulation.py`):** To evaluate the framework at scale without human intervention, we implemented a simulation script that automatically triggers interventions when the SOS score exceeds a threshold (e.g., 0.3).
+*   **Oracle Baseline (`run_oracle_baseline.py`):** A baseline system that uses an external judge to detect errors and truncate the generation, simulating a perfect "Right to Know" but limited "Right to Choose" (prompting only).
+
 ## Experiments
 
 To validate the "Agency" paradigm, we compare Rethink against state-of-the-art Multi-turn Prompting methods.

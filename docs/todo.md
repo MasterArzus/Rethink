@@ -3,29 +3,29 @@
 ## 🚀 To-Do List (Engineering Phase)
 
 ### 1. Core Algorithm Upgrade (`rethink/analysis/token_analysis.py`)
-- [ ] **Implement KL Divergence:** Create `compute_kl_divergence(logits_mid, logits_final)` to measure internal conflict.
-- [ ] **Implement Semantic Similarity:** Create `compute_semantic_similarity(top_k_tokens)` using the model's own input embedding matrix (Zero-cost approach).
-- [ ] **Implement Hybrid SOS Metric:** 
+- [x] **Implement KL Divergence:** Create `compute_kl_divergence(logits_mid, logits_final)` to measure internal conflict.
+- [x] **Implement Semantic Similarity:** Create `compute_semantic_similarity(top_k_tokens)` using the model's own input embedding matrix (Zero-cost approach).
+- [x] **Implement Hybrid SOS Metric:** 
     - Combine Internal Conflict and Semantic Ambiguity.
     - **Crucial:** Apply normalization (e.g., Sigmoid or Percentile) to the KL term to ensure it doesn't dominate the score.
     - Formula: $SOS = \text{Normalize}(D_{KL}) \times (1 - \text{Sim})$.
 
 ### 2. Configuration System Update (`configs/`)
-- [ ] **Update Model Configs:** Add `reference_layer_idx` (e.g., layer 20 for Llama-3-8B) to `configs/models/*.yaml`.
-- [ ] **Add Thresholds:** Add `sos_threshold` and `entropy_threshold` parameters for automated steering experiments.
+- [x] **Update Model Configs:** Add `reference_layer_idx` (e.g., layer 20 for Llama-3-8B) to `configs/models/*.yaml`.
+- [x] **Add Thresholds:** Add `sos_threshold` and `entropy_threshold` parameters for automated steering experiments.
 
 ### 3. Automated Evaluation Pipeline (Experiment Infrastructure)
-- [ ] **Build "Automated Judge":** Integrate a strong judge model (e.g., GPT-4o or DeepSeek-V3) to identify the *first error step* in a reasoning trace.
-- [ ] **Implement Oracle Baseline Script:** 
+- [x] **Build "Automated Judge":** Integrate a strong judge model (e.g., GPT-4o or DeepSeek-V3) to identify the *first error step* in a reasoning trace. (Infrastructure ready in `run_oracle_baseline.py`)
+- [x] **Implement Oracle Baseline Script:** 
     - Create `run_oracle_baseline.py`.
     - Logic: When Judge detects error at step $t$, truncate context and append prompt "You made a mistake at step $t$, please rewrite...".
-- [ ] **Implement Simulation Script:**
+- [x] **Implement Simulation Script:**
     - Create `run_rethink_simulation.py`.
     - Logic: When SOS > Threshold, automatically trigger intervention (e.g., beam search or rejection sampling) to simulate "User Agency".
 
 ### 4. Data Recording & Visualization
 - [ ] **Snapshot Recorder:** Ensure `recorder/` can save full Logits/Entropy states for specific interesting steps.
-- [ ] **Case Study Visualization:** Prepare scripts to plot "Logit Lens Evolution" for the paper's "Aha!" moment figure (showing how steering fixes internal conflict).
+- [x] **Case Study Visualization:** Prepare scripts to plot "Logit Lens Evolution" for the paper's "Aha!" moment figure (showing how steering fixes internal conflict).
 
 ---
 
