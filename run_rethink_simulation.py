@@ -2,15 +2,26 @@
 import argparse
 import torch
 import torch.nn.functional as F
+import json
+import re
 from typing import Optional, List, Dict, Any
 from transformers import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper, RepetitionPenaltyLogitsProcessor
 from rethink.engine.llama import RethinkLlamaForCausalLM, TracePack
 from rethink.recorder.token_recorder import TokenRecorder
 from rethink.analysis.token_analysis import TokenAnalysis
-from rethink.utils.config import RethinkConfig
+from rethink.utils.config import RethinkConfig, InstrumentationConfig
 from transformers import AutoTokenizer, AutoConfig
-import yaml
-import os
+from datasets import load_dataset
+
+def extract_answer(text):
+    """Extract the numerical answer from GSM8K text."""
+    match = re.search(r"####\s*(-?\d+\.?\d*)", text)
+    if match:
+        return match.group(1)
+    matches = re.findall(r"-?\d+\.?\d*", text)
+    if matches:
+        return matches[-1]
+    return None
 
 class SimulationLlama(RethinkLlamaForCausalLM):
     @torch.no_grad()
@@ -21,6 +32,7 @@ class SimulationLlama(RethinkLlamaForCausalLM):
         generation_kwargs: Optional[dict] = None,
         sos_threshold: float = 0.5,
         reference_layer_idx: int = 20,
+        max_interventions: int = 5
     ) -> TracePack:
         """
         Run generation with SOS-based simulation intervention.
@@ -47,10 +59,12 @@ class SimulationLlama(RethinkLlamaForCausalLM):
         ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
 
         intervention_count = 0
+        total_tokens = 0
 
         with ctx_manager:
             past_key_values = None
             generated_ids = input_ids
+            
             for step in range(generation_kwargs.get("max_new_tokens", 128)):
                 outputs = super(RethinkLlamaForCausalLM, self).forward(
                     input_ids=generated_ids,
@@ -71,6 +85,8 @@ class SimulationLlama(RethinkLlamaForCausalLM):
                 
                 # --- SOS Calculation & Intervention Logic ---
                 sos_score = 0.0
+                intervened = False
+                
                 if current_states and reference_layer_idx in current_states:
                     # Create a temporary TokenRecorder to use TokenAnalysis
                     temp_recorder = TokenRecorder(
@@ -79,25 +95,23 @@ class SimulationLlama(RethinkLlamaForCausalLM):
                     )
                     analyzer = TokenAnalysis(temp_recorder, self, tokenizer)
                     
-                    # We need to pick a layer to compare against reference. 
-                    # Usually the last layer (before final norm/head) or a mid layer.
-                    # Let's assume we compare layer 15 vs 20 (reference).
-                    # Or iterate through layers to find max SOS?
-                    # For simplicity, let's compare layer 15 (mid) with reference.
+                    # Compare mid layer (e.g., 15) with reference (e.g., 20 or last)
                     mid_layer = 15 
                     if mid_layer in current_states:
+                        # Use the new compute_sos_metric
                         sos_score = analyzer.compute_sos_metric(mid_layer, reference_layer_idx)
                 
                 # Intervention: If SOS is high, we might want to change sampling strategy
-                if sos_score > sos_threshold:
+                if sos_score > sos_threshold and intervention_count < max_interventions:
                     intervention_count += 1
+                    intervened = True
                     # Strategy: "Reject Top-1" (Simulate user saying 'No, not that')
                     # We mask the highest probability token and force the model to choose the next best
                     top1_idx = torch.argmax(next_token_logits, dim=-1)
                     next_token_logits[0, top1_idx] = -float('inf')
                     
-                    # Optional: We could also increase temperature here to encourage exploration
-                    # generation_kwargs['temperature'] = 1.0 
+                    # Optional: Increase temperature to encourage exploration
+                    # generation_kwargs['temperature'] = 1.2
                 
                 # --------------------------------------------
 
@@ -114,6 +128,7 @@ class SimulationLlama(RethinkLlamaForCausalLM):
                 
                 token_id = next_token.item()
                 token_str = tokenizer.decode([token_id])
+                total_tokens += 1
 
                 token_logs.append(
                     TokenRecorder(
@@ -123,6 +138,7 @@ class SimulationLlama(RethinkLlamaForCausalLM):
                         prob=probs[0, token_id].item(),
                         log_prob=torch.log(probs[0, token_id]).item(),
                         hidden_states=current_states,
+                        extra={"sos": sos_score, "intervened": intervened}
                     )
                 )
                 generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
@@ -134,33 +150,34 @@ class SimulationLlama(RethinkLlamaForCausalLM):
                     elif isinstance(eos_token_id, (list, tuple)) and token_id in eos_token_id:
                         break
 
-        print(f"Simulation complete. Total interventions triggered: {intervention_count}")
-        print(f"Total tokens generated: {len(token_logs)}")
-        
         return TracePack(
             token_logprobs=token_logs,
             hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
-            extra={"prompt_ids": input_ids.cpu()},
+            extra={
+                "prompt_ids": input_ids.cpu(),
+                "intervention_count": intervention_count,
+                "total_tokens": total_tokens
+            },
         )
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-path", type=str, required=True)
-    parser.add_argument("--prompt", type=str, default="Solve: 24 + 5 * 3 = ?")
+    parser.add_argument("--dataset", type=str, default="gsm8k")
     parser.add_argument("--sos-threshold", type=float, default=0.3)
+    parser.add_argument("--output-file", type=str, default="rethink_simulation_results.json")
     args = parser.parse_args()
 
     print(f"Loading model from {args.model_path}...")
-    # Load config to get reference_layer_idx if possible, or default
-    # For now, hardcode or pass via args
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     config = AutoConfig.from_pretrained(args.model_path)
     
     # Initialize SimulationLlama
     # We need to pass instrumentation config
-    from rethink.utils.config import InstrumentationConfig
-    instr_cfg = InstrumentationConfig(layers_to_capture=[15, 20, 31]) # Capture mid, ref, and last
+    # Capture mid (15), ref (20), and last (31/32 depending on model)
+    # Assuming Llama-3-8B has 32 layers.
+    instr_cfg = InstrumentationConfig(layers_to_capture=[15, 20, 31]) 
     
     model = SimulationLlama.from_pretrained(
         args.model_path, 
@@ -170,16 +187,57 @@ def main():
         torch_dtype=torch.float16
     )
     
-    print("Starting generation...")
-    trace = model.generate_with_simulation(
-        tokenizer, 
-        args.prompt, 
-        sos_threshold=args.sos_threshold,
-        reference_layer_idx=20
-    )
+    # Load Dataset
+    if args.dataset == "gsm8k":
+        ds = load_dataset("gsm8k", "main", split="test[:10]")
+    else:
+        raise ValueError("Dataset not supported")
+        
+    results = []
     
-    print("Generation Result:")
-    print("".join([t.token for t in trace.token_logprobs]))
+    for i, example in enumerate(ds):
+        question = example['question']
+        answer = example['answer']
+        print(f"\n--- Example {i} ---")
+        print(f"Question: {question}")
+        
+        trace = model.generate_with_simulation(
+            tokenizer, 
+            question, 
+            sos_threshold=args.sos_threshold,
+            reference_layer_idx=20
+        )
+        
+        generated_text = "".join([t.token for t in trace.token_logprobs])
+        print(f"Generated: {generated_text[:50]}...")
+        
+        # Check correctness
+        pred = extract_answer(generated_text)
+        gt = extract_answer(answer)
+        success = (pred == gt) if (pred and gt) else False
+        
+        print(f"Success: {success}, Interventions: {trace.extra['intervention_count']}")
+        
+        results.append({
+            "question": question,
+            "ground_truth": answer,
+            "generated_text": generated_text,
+            "success": success,
+            "interventions": trace.extra['intervention_count'],
+            "total_tokens": trace.extra['total_tokens']
+        })
+        
+    # Summary
+    csr = sum(1 for r in results if r['success']) / len(results)
+    avg_interventions = sum(r['interventions'] for r in results) / len(results)
+    
+    print("\n=== Summary ===")
+    print(f"Rethink CSR: {csr:.2%}")
+    print(f"Avg Interventions: {avg_interventions:.2f}")
+    
+    with open(args.output_file, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Results saved to {args.output_file}")
 
 if __name__ == "__main__":
     main()

@@ -72,8 +72,8 @@ Rethink consists of three modules corresponding to the user's rights:
 ### 3.3 Steering Opportunity Detection
 To assist users in finding the "Bifurcation Point," we propose a mathematically grounded **Steering Opportunity Score (SOS)**. Unlike simple entropy which is sensitive to trivial synonym variations (e.g., "happy" vs "glad"), our metric combines **Internal Conflict** and **Semantic Ambiguity**:
 $$ SOS(t) = \underbrace{D_{KL}(P_{final} || P_{mid})}_{\text{Internal Conflict}} \times \underbrace{(1 - \text{SemanticSim}(TopK))}_{\text{Semantic Ambiguity}} $$
-*   **Internal Conflict:** Measured by the KL Divergence between the logits of an intermediate layer ($P_{mid}$) and the final layer ($P_{final}$). High divergence suggests the model is "suppressing" its initial intuition (potential hallucination or sycophancy).
-*   **Semantic Ambiguity:** Measures whether the top-k candidates belong to different semantic clusters (using embedding cosine similarity). This filters out false positives where the model is uncertain only about surface phrasing.
+*   **Internal Conflict (Layer-wise Divergence):** Measured by the KL Divergence (or Jensen-Shannon Divergence) between the logits of an intermediate layer ($P_{mid}$) and the final layer ($P_{final}$). High divergence suggests the model is "suppressing" its initial intuition (potential hallucination or sycophancy).
+*   **Semantic Ambiguity (Semantic Entropy):** Measures whether the top-k candidates belong to different semantic clusters (using embedding cosine similarity). This filters out false positives where the model is uncertain only about surface phrasing.
 High SOS indicates a **"High-Leverage Point"** where the model is internally conflicted about the *meaning* of the output, making it an ideal candidate for steering.
 
 ### 3.4 Interactive Steering Mechanism
@@ -101,10 +101,10 @@ To validate the "Agency" paradigm, we compare Rethink against state-of-the-art M
 *   **Hypothesis:** Prompting suffers from "Sycophancy" (agreeing with the user but not fixing the root cause) and "Error Propagation." Steering fixes the root cause.
 *   **Datasets:** GSM8K (Reasoning), TruthfulQA (Hallucination).
 *   **Baselines:**
-    1.  **Standard Generation:** Zero-shot.
+    1.  **Standard Generation:** Zero-shot CoT.
     2.  **Reflexion (Shinn et al., 2023):** Automated self-correction via prompting ("You are wrong, fix it").
     3.  **Oracle Prompting (Strong Baseline):** A theoretical upper bound where the user identifies the exact error location $t^*$ immediately but is restricted to natural language feedback (e.g., "You made a mistake at step $t^*$, please rewrite from there"). This isolates the benefit of *Intervention Mechanism* (KV manipulation) from *Information Advantage*.
-*   **Ours (Rethink):** Human-in-the-loop steering at the first error token using KV Cache Slicing.
+*   **Ours (Rethink Simulation):** Automatically trigger KV-Cache truncation at the first error step (detected by Ground Truth or SOS).
 *   **Metrics:**
     *   **Correction Success Rate (CSR):** % of errors fixed.
     *   **Faithfulness:** Does the model actually change its internal logic, or just the output surface form?
@@ -113,36 +113,31 @@ To validate the "Agency" paradigm, we compare Rethink against state-of-the-art M
 **Does "Right to Choose" (Intervention) save computational resources?**
 *   **Hypothesis:** Rethink avoids re-generating the correct prefix and the erroneous suffix, saving significant tokens.
 *   **Metrics:**
-    *   **Token Saving Rate (TSR):** Compared to full re-generation in prompting.
+    *   **Token Saving Rate (TSR):** $1 - \frac{Tokens_{Rethink}}{Tokens_{Prompt}}$.
     *   **Interaction Turns:** Number of turns to reach the correct answer.
 
 ### RQ3: The Value of "Right to Know" (Ablation Study)
 **Does visualizing internal states (Entropy/Logits) actually help users steer?**
 *   **Setup:** User study with two conditions:
     *   **Blind Steering:** Users can truncate/edit, but see no Entropy/Logits.
-    *   **Informed Steering (Rethink):** Users see the full dashboard.
+    *   **Informed Steering (Rethink):** Users see the full dashboard (SOS Heatmap).
 *   **Task:** Fix errors in Math500.
-*   **Metrics:** Time to fix, Number of trials, User confidence ratings.
+*   **Metrics:** Time to fix, Number of trials, User confidence ratings, Localization Error.
 
-### RQ4: Alignment & Safety (Steerability)
+### RQ4: Alignment & Safety (Robustness to Sycophancy)
 **Can Rethink enforce safety constraints where Prompting fails?**
-*   **Dataset:** RealToxicityPrompts or Jailbreak scenarios.
-*   **Method:** Attempt to steer the model away from toxic outputs using Logit Lens selection vs. prompting "Be safe."
-*   **Metric:** Success rate of defense against jailbreaks.
+*   **Hypothesis:** Prompting is vulnerable to user bias (Sycophancy); Rethink (Internal State) is robust.
+*   **Setup:** Attack the model by appending "I think the answer is [Wrong Answer]. Are you sure?" to correctly answered questions.
+*   **Method:** Check **Internal Confidence** (Entropy/Logit Gap). If internal confidence is high, **refuse to flip**.
+*   **Metric:** **Flip Rate** (Lower is better).
 
 
 
-## conclusion
-Rethink框架的构建基于一个简单的程序员直觉-->*改为“Software Engineering for AI” 或者 “White-box Steering”*：我们在进行大模型生成的时候，能不能像在Ide里面一样加断点，测试逐步生成，了解里面的数据结构？基于这个思想，我们构造Rethink框架来降低用户debug模型生成内容的成本，这种对话型人机交互范式给予用户深入了解的能力，具有更高的可控生成能力与可解释性。
+## Conclusion
+The construction of the Rethink framework is grounded in the philosophy of **"Software Engineering for AI"** and **"White-box Steering."** Just as developers use breakpoints and step-by-step debugging in an IDE to understand code execution, we ask: can we apply similar principles to LLM generation? Rethink answers this by providing a framework that lowers the cost of debugging model outputs. This conversational, human-in-the-loop paradigm empowers users with deep insight into the model's internal states, offering higher controllability and interpretability than traditional black-box methods.
 
-limitation
-由于时间及人员原因，该工作并没有像llama factory（）一样构建一个庞大完备的体系，而是做了一个可以随时复现的demo。该工作还有一系列新模型未做适配，未构建适合多种环境的运行框架。该工作由于进行了layer/logits数据结构的存储，对运行内存及并行计算内存的需求较大，计算资源需要增加。该工作是human in the loop，相较于模型自动化的方法具有一定的人工成本。
+## Limitations
+Due to time and resource constraints, this work is presented as a reproducible demo rather than a comprehensive system like LLaMA Factory. We have not yet adapted the framework to a wide range of new models or built a runtime environment suitable for diverse deployment scenarios. Additionally, storing layer-wise logits and hidden states requires significant memory and computational resources. Finally, as a human-in-the-loop approach, Rethink incurs a higher labor cost compared to fully automated methods, though it offers greater precision.
 
-future work
-该工作的交互范式可以作为模型提供给用户的一种选择模式，那些需求较高，对推理过程，偏好对齐可以选择这种模式进行debug。该工作可以进一步完善判断、推荐算法的能力，给用户提供细粒度，个性化的分析及建议。
-
----
-
-我这里是否能够考虑局部最优和全局最优？（目前算是贪心吗？）
-错误传播（居然和我这篇有一点像）
-插一帧（token）告诉模型这次生成是否存在问题
+## Future Work
+The interaction paradigm introduced by Rethink can serve as an advanced "Debug Mode" for users with high requirements for reasoning accuracy and preference alignment. Future work will focus on improving the **Steering Opportunity Score (SOS)** and recommendation algorithms to provide users with more fine-grained, personalized analysis and suggestions. We also aim to explore **automated steering** strategies that can learn from human interventions to reduce the need for manual oversight.
