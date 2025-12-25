@@ -11,3 +11,5 @@ streamlit
 st-click-detector
 bertviz
 plotly
+openai
+seaborn

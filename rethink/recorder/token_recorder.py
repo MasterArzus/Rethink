@@ -7,13 +7,14 @@ class TokenRecorder:
     '''
     Record a token during inference, including its probability and hidden states.
     '''
-    def __init__(self, idx: int, step: int, token: str, prob: float, log_prob: float, hidden_states: Union[Dict[int, HiddenState], Trajectory], input_ids: Optional[torch.Tensor] = None):
+    def __init__(self, idx: int, step: int, token: str, prob: float, log_prob: float, hidden_states: Union[Dict[int, HiddenState], Trajectory], input_ids: Optional[torch.Tensor] = None, extra: Optional[Dict] = None):
         self.idx = idx  # token idx
         self.step = step  # step to generate this token
         self.token = token  # detokenized token
         self.prob = prob  # probability to generate this word
         self.log_prob = log_prob # log probability
         self.input_ids = input_ids # The input context used to generate this token
+        self.extra = extra or {} # Extra metadata (e.g., SOS score, intervention flag)
         
         # Support both legacy Dict and new Trajectory
         if isinstance(hidden_states, Trajectory):

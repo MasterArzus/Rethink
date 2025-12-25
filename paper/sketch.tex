@@ -13,170 +13,148 @@
 \maketitle
 
 \section{Introduction}
+\label{intro}
+The prevailing paradigm in human-computer interaction for Large Language Models (LLMs) is conversational dialogue \edit{(e.g., OpenAI-ChatGPT, 2023, Google-Gemini,2025, Meta-LLama,2024)}. Within this paradigm, extensive research has been conducted on long-context understanding, multi-turn iteration, and in-context learning \edit{need to search corresponding papers} to align model outputs with user needs and human values \edit{(Ouyang et al., 2022; Bai et al., 2022)}. While these automated alignment strategies provide valuable algorithms and metrics, they often lack human involvement, making it difficult to align with the diverse and specific preferences of individual users. \edit{need reference}
 
-The prevailing paradigm in human-computer interaction for Large Language Models (LLMs) is conversational dialogue (e.g., OpenAI, 2023). Within this paradigm, extensive research has been conducted on long-context understanding, multi-turn iteration, and in-context learning to align model outputs with user needs and human values (Ouyang et al., 2022; Bai et al., 2022). While these automated alignment strategies provide valuable algorithms and metrics, they often lack granular human involvement, making it difficult to align with the diverse and specific preferences of individual users.
+We argue that alignment is not a one-off training task, but a continuous runtime process. Pre-training and RLHF provide a "base alignment" for the average user, but for every specific user, it is crucial to provide an option for them to choose during deployment. Further alignment requires steerability towards user intent at inference time.
 
-In both academic testing and real-world applications, users frequently encounter scenarios where they must correct specific parts of a generated response (e.g., "This part is wrong, please modify it"). However, current conversational models typically treat the entire previous dialogue—including the erroneous segments—as context. This leads to two critical issues during re-generation: \textbf{Error Propagation} and \textbf{Ambiguity in Feedback}. When a user simply states that an output is "incorrect," the model often fails to discern the precise source of the error—whether it is a logical fallacy, a calculation error, or a factual hallucination. Consequently, the model may continue to hallucinate or fail to attend to the specific correction required, leading to \textbf{Hallucination Accumulation}. Furthermore, re-generating the entire response to fix a local error results in significant computational inefficiency and token wastage.
 
-To address these challenges, we argue that effective debugging requires shifting the paradigm from \textbf{"black-box prompting"} to \textbf{"glass-box steering."} Merely asking a model to "try again" is insufficient when the model lacks introspection into \textit{why} it failed. Instead, users need a mechanism to inspect the model's internal decision-making process and intervene precisely at the point of divergence.
+In both academic testing and real-world applications, users frequently encounter scenarios where they must correct specific parts of a generated response (e.g., "This part is wrong, please modify it")\edit{can u find anything}. However, current conversational models typically treat the entire previous dialogue—including the erroneous segments—as context.\edit{long in context learning reference} This leads to two critical issues during re-generation: dialogue \textbf{Error Propagation} and \textbf{Ambiguity} in user Feedback\edit{hope to find a clue}. Without clear and detailed instructions provided by the users in multi-dialogues, some models often fail to judge which parts of the generation need to be preserved, which parts need to be modified. Meanwhile, users cannot predict what models resample in this round. In this interaction paradigm, the model's alignment is implicit, making it difficult to provide users with explicit alignment behavior. Furthermore, re-generating the entire response to fix a local error results in significant computational inefficiency and token wastage.
+
+To address these challenges, research like Inference-Time Intervention(), TruthX() has made great progress in model inference and alignment. Compared to fully automated methods, in the field of human-computer interaction, we argue that effective cooperation requires shifting the paradigm from \textbf{"black-box"} prompting to \textbf{"glass-box"} steering. Merely communicating with models through dialogues is insufficient when models lacks introspection into \textit{what} the user truly needs. Instead, users can take advantage of the auto-regressive mechanism of language models, inspect the model's internal decision-making process and intervene precisely at the point of divergence.
 
 Based on this insight, we propose \textbf{Rethink}, an interactive framework for \textbf{Fine-Grained Inference-Time Intervention}. Rethink bridges the gap between mechanistic interpretability and human intent by visualizing internal signals—such as token-level entropy and logit distributions—to expose the model's uncertainty. Crucially, it empowers users to act as a "surgeon," pinpointing the exact token where reasoning diverges. This \textbf{"Interactive Activation Steering"} capability allows users to physically truncate erroneous paths in the KV cache, effectively blocking error propagation and achieving precise alignment with human logic.
 
 In summary, our contributions are as follows:
-\begin{enumerate}
-    \item \textbf{Paradigm Shift:} We identify the limitations of coarse-grained conversational correction and propose a fine-grained, process-oriented debugging paradigm that resolves feedback ambiguity.
-    \item \textbf{Framework:} We introduce Rethink, a modular system that operationalizes mechanistic interpretability tools (Logit Lens, Entropy) into an interactive steering interface.
-    \item \textbf{Methodology:} We formalize the "Interactive Activation Steering" mechanism and propose diagnostic metrics (e.g., Suspicion Score) to guide human intervention, demonstrating effectiveness in both reasoning accuracy and token efficiency.
-\end{enumerate}
+\begin{itemize}
+    \item We propose a user-informed, process-oriented interaction paradigm that resolves error propagation and feedback ambiguity during generation. We formalise the "Interactive Activation Steering" mechanism and propose certain diagnostic metrics to guide human intervention, demonstrating effectiveness in model aligning user intent, model reasoning accuracy and token efficiency in the human-AI interaction era.
+    \item We introduce Rethink, a modular system that operationalises mechanistic interpretability tools (Logit Lens, Entropy) into an interactive steering interface.
+    \item We conduct extensive experiments on several kinds of datasets
+\end{itemize}
+
 
 \section{Related Work}
+\label{related}
 
-\subsection{From Coarse-Grained Dialogue to Fine-Grained Interaction}
-Human-AI interaction has evolved from simple prompting to more granular collaboration. Early co-authoring tools like \textit{Wordcraft} (Coenen et al., 2021) and \textit{CoAuthor} (Lee et al., 2022) allowed users to edit text or request infilling, but these interactions were limited to the surface level (text editing). In the coding domain, \textit{Debug-gym} (Gero et al., 2023) introduced interactive debugging via test cases. However, these methods treat the model largely as a black box—users can modify the \textit{output}, but cannot inspect or steer the \textit{internal process} that led to errors. \textbf{Rethink advances this lineage by providing a "glass-box" interface}, enabling users to interact not just with the generated text, but with the underlying probability distributions and hidden states.
+\textbf{Human-LLM Interaction} \hspace{1mm}
+Current Human-LLM interaction is predominantly defined by chat-based interfaces, treating the model as a "black box" where users influence outputs solely through prompting. While effective for general tasks, this paradigm lacks the granularity required for complex reasoning, often leading to the "Gulf of Execution" where users struggle to map their intent to model operations. Recent HCI research has explored "glass-box" interfaces to bridge this gap. For instance, \textit{Graphologue} (Jiang et al., 2023) visualizes the reasoning process as a graph, allowing users to manage context more effectively. Similarly, tools like \textit{Co-Audit} (Liao et al., 2023) and \textit{Wordcraft} (Coenen et al., 2021) introduce "direct manipulation" capabilities, enabling users to edit or infill text.
 
-\subsection{Inference-Time Steering: Automated vs. Interactive}
-Recent research focuses on steering model behavior during inference without parameter updates.
-\begin{itemize}
-    \item \textbf{Automated Search \& Backtracking:} Methods like \textit{Tree of Thoughts (ToT)} (Yao et al., 2023) and \textit{RAIN} (Li et al., 2023) introduce backtracking mechanisms to discard low-quality paths. However, they rely on the model's self-evaluation, which is prone to hallucination.
-    \item \textbf{Activation Steering:} Techniques like \textit{Inference-Time Intervention (ITI)} (Li et al., 2024) and \textit{Activation Engineering} (Turner et al., 2023) modify internal activation vectors to elicit truthful behaviors. While effective, these methods typically apply a static, global intervention direction.
-\end{itemize}
-\textbf{Rethink's Position:} We propose \textbf{Interactive Activation Steering}. Unlike RAIN, we replace unreliable self-evaluation with precise human judgment. Unlike ITI, we replace static global interventions with dynamic, local interventions (token-level truncation and resampling), allowing for context-aware correction of complex reasoning chains.
+However, these approaches typically operate on the surface level (text) or require users to manually construct prompts. They rarely expose the model's internal decision-making process, such as uncertainty or alternative token probabilities. Our method advances this by visualizing the model's internal state (e.g., entropy, logit distributions) and enabling "Interactive Activation Steering." This allows users to intervene not just on the output text, but on the generative trajectory itself, effectively acting as a "surgeon" to prune erroneous reasoning paths.
 
-\section{Preliminary}
+\noindent \textbf{Activation Steering} \hspace{1mm}
+Steering LLM behavior at inference time without parameter updates has emerged as a powerful alignment technique. Activation Steering methods, such as \textit{Inference-Time Intervention (ITI)} (Li et al., 2023) and \textit{Representation Engineering (RepE)} (Zou et al., 2023), identify and manipulate "steering vectors" in the model's activation space to enforce behaviors like truthfulness or harmlessness. Complementary to this, decoding strategies like \textit{Contrastive Decoding} (Li et al., 2023) and \textit{DoLa} (Chuang et al., 2023) exploit layer-wise discrepancies (e.g., "Logit Lens") to reduce hallucinations and improve factuality.
 
-\subsection{Autoregressive Generation \& State Space}
-We model the generation process as a trajectory through a state space. At time step $t$, the model state $S_t$ consists of the Key-Value (KV) cache of all preceding tokens: $S_t = \{(K_i, V_i)\}_{i=1}^{t-1}$. The probability of the next token $y_t$ is conditioned on this state and the current input $x$:
+Despite their success, these methods are predominantly \textit{static} (applying a fixed vector globally) or \textit{fully automated}, lacking the adaptability to handle ambiguous or context-dependent errors. They often treat all tokens equally or rely on heuristic triggers. \textbf{Rethink} introduces a human-in-the-loop approach to steering. By computing a dynamic "Steering Opportunity Score," Rethink identifies specific moments of internal conflict and empowers users to apply precise, local interventions (via KV cache truncation or token selection), combining the scalability of automated metrics with the semantic judgment of humans.
+
+\noindent \textbf{Process Supervision} \hspace{1mm}
+Moving beyond outcome-based supervision, recent work views LLM reasoning as a search process. Methods like \textit{Tree of Thoughts (ToT)} (Yao et al., 2023) and \textit{Graph of Thoughts} (Besta et al., 2023) utilize branching and backtracking to explore diverse reasoning paths. These are often coupled with \textit{Process Reward Models (PRM)} (Lightman et al., 2023), which score intermediate steps to guide the search, effectively applying Monte Carlo Tree Search (MCTS) principles to language generation.
+
+
+
+\section{Methodology}
+
+\subsection{Overview}
+We propose \textbf{Rethink}, a framework designed to shift LLM interaction from "black-box" prompting to "glass-box" steering. Unlike standard conversational interfaces where users only see the final output, Rethink exposes the model's internal decision-making process—specifically its uncertainty and latent semantic shifts—allowing users to intervene during the generation process.
+The framework consists of three coupled modules: the \textit{Generator}, which manages the autoregressive inference and KV cache; the \textit{Analyzer}, which computes real-time diagnostic metrics (e.g., entropy, logit divergence); and the \textit{Controller}, which provides the interface for users to execute "surgical" interventions. This design enables a tight feedback loop where human intent directly modulates the model's activation states.
+
+\subsection{Generation and State Space}
+We model the generation process as a trajectory through a high-dimensional state space. At time step $t$, the model's state $S_t$ is encapsulated by the Key-Value (KV) cache of all preceding tokens, denoted as $S_t = \{(K_i, V_i)\}_{i=1}^{t-1}$. The probability of the next token $y_t$ is conditioned on this state and the input $x$:
 \begin{equation}
- P(y_t | y_{<t}, x) = \text{softmax}(W_U \cdot f(S_t, y_{t-1})) 
+ P(y_t | y_{<t}, x) = \text{softmax}(W_U \cdot f(S_t, y_{t-1}))
 \end{equation}
-where $f$ is the Transformer forward pass and $W_U$ is the unembedding matrix.
+where $f$ represents the Transformer forward pass and $W_U$ is the unembedding matrix. Standard generation extends this trajectory linearly: $S_{t+1} = S_t \cup \{(K_t, V_t)\}$. Rethink interrupts this linear flow, treating $S_t$ as a mutable object that can be inspected and pruned.
 
-\subsection{Intervention Operators}
-Standard generation is a linear extension of the trajectory: $S_{t+1} = S_t \cup \{(K_t, V_t)\}$.
-In Rethink, we define an \textbf{Intervention Operator} $\mathcal{I}(S_t, a)$ that modifies the trajectory based on user action $a$:
-\begin{enumerate}
-    \item \textbf{Truncation (Rewind):} If the user rejects token $y_t$, we perform a \textbf{KV Cache Slicing} operation. The state is reset to $S_t$, physically discarding all subsequent computations ($S_{>t} \leftarrow \emptyset$).
-    \begin{equation}
-     \mathcal{I}(S_{t+k}, \text{truncate}(t)) = S_t 
-    \end{equation}
-    \item \textbf{Steering (Resample):} The user can force the selection of an alternative token $y'_t$ (e.g., from the top-k logits). This branches the trajectory into a new path:
-    \begin{equation}
-     S'_{t+1} = S_t \cup \{(K'_t, V'_t)\} \quad \text{where } y_t = y'_t 
-    \end{equation}
-\end{enumerate}
+\subsection{Diagnostic Metrics: The "Glass-Box" View}
+To guide user intervention, we must translate high-dimensional internal states into interpretable signals. We employ two primary lenses:
 
-This formulation highlights that Rethink operates directly on the \textbf{memory state (KV Cache)} of the model, ensuring that interventions are mathematically exact and computationally efficient (avoiding re-computation of the prefix).
-
-\section{Methods}
-
-\subsection{Problem Formulation}
-We define the language model generation process as $P(y_t | y_{<t}, x)$.
-The goal of the debugging task is: given a trajectory containing errors $Y_{err}$, find the time step $t^*$ where the error occurs, and through intervention $Action(t^*)$, guide the model to generate a corrected trajectory $Y_{corr}$, such that $Reward(Y_{corr}) > Reward(Y_{err})$.
-
-\subsection{The Rethink Framework}
-We introduce the three core modules of Rethink and their data flow:
-\begin{enumerate}
-    \item \textbf{Generator \& Recorder:} Responsible for autoregressive generation and capturing intermediate states (Hidden States, Logits).
-    \item \textbf{Analyzer (Diagnostic Module):} Responsible for computing diagnostic metrics.
-    \begin{itemize}
-        \item \textit{Entropy Analysis:} Define $H(y_t) = -\sum p(y_t) \log p(y_t)$ as the uncertainty metric.
-        \item \textit{Semantic Evolution (Logit Lens):} Define layer-wise prediction difference $D(L_i, L_j)$ to quantify semantic drift.
-    \end{itemize}
-    \item \textbf{Controller (Intervention Module):} Provides the interactive interface.
-    \begin{itemize}
-        \item \textit{Truncate \& Resample:} $y_{>t} \leftarrow \text{Generate}(y_{\le t})$.
-        \item \textit{Alternative Selection:} User manually selects $y'_t \in \text{TopK}(P(y_t))$ to replace the original token.
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Steering Opportunity Detection}
-To assist users in finding the "Bifurcation Point," we propose a mathematically grounded \textbf{Steering Opportunity Score (SOS)}. Unlike simple entropy which is sensitive to trivial synonym variations (e.g., "happy" vs "glad"), our metric combines \textbf{Internal Conflict} and \textbf{Semantic Ambiguity}:
+\paragraph{Internal Conflict and Logit Lens.}
+While final-layer probabilities reflect the model's committed output, intermediate layers often reveal suppressed alternatives. We utilize the \textit{Logit Lens} technique to project hidden states from layer $l$ into the vocabulary space, obtaining a distribution $P^{(l)}$. We quantify \textbf{Internal Conflict} as the divergence between an early layer's "intuition" and the final output:
 \begin{equation}
- SOS(t) = \underbrace{D_{KL}(P_{final} || P_{mid})}_{\text{Internal Conflict}} \times \underbrace{(1 - \text{SemanticSim}(TopK))}_{\text{Semantic Ambiguity}} 
+    D_{\text{conflict}}(t) = D_{KL}(P^{(L)}_{t} || P^{(l)}_{t})
 \end{equation}
-\begin{itemize}
-    \item \textbf{Internal Conflict (Layer-wise Divergence):} Measured by the KL Divergence (or Jensen-Shannon Divergence) between the logits of an intermediate layer ($P_{mid}$) and the final layer ($P_{final}$). High divergence suggests the model is "suppressing" its initial intuition (potential hallucination or sycophancy).
-    \item \textbf{Semantic Ambiguity (Semantic Entropy):} Measures whether the top-k candidates belong to different semantic clusters (using embedding cosine similarity). This filters out false positives where the model is uncertain only about surface phrasing.
-\end{itemize}
-High SOS indicates a \textbf{"High-Leverage Point"} where the model is internally conflicted about the \textit{meaning} of the output, making it an ideal candidate for steering.
+A high divergence suggests the model "changed its mind" during processing, often indicating hallucination or sycophancy.
 
-\subsection{Interactive Steering Mechanism}
-The interaction loop is defined as:
-\begin{enumerate}
-    \item \textbf{Observe:} User views the generated text overlaid with the SOS heatmap.
-    \item \textbf{Diagnose:} User clicks a high-SOS token to inspect the Logit Lens (seeing alternatives).
-    \item \textbf{Act:} User selects a better alternative or truncates the sequence.
-    \item \textbf{Update:} The system rewinds the KV cache to $t^*$ and continues generation from the new state.
-\end{enumerate}
+\paragraph{Steering Opportunity Score (SOS).}
+Raw entropy is often noisy; a model may be uncertain between two synonyms (e.g., "happy" vs. "glad") which is benign. To identify meaningful intervention points, we propose the \textbf{Steering Opportunity Score (SOS)}, which weights internal conflict by semantic ambiguity:
+\begin{equation}
+    SOS(t) = \tanh(D_{\text{conflict}}(t)) \cdot (1 - \text{Sim}_{\text{sem}}(TopK))
+\end{equation}
+Here, $\text{Sim}_{\text{sem}}$ measures the cosine similarity of the embeddings of the top-$k$ tokens. A high SOS indicates a "bifurcation point" where the model is conflicted between semantically distinct paths, signaling a high-leverage opportunity for human steering.
 
-Unlike conversational correction which operates on the \textbf{output text} (post-hoc), Rethink operates on the \textbf{generative process} (in-situ). By physically slicing the KV cache, we mathematically guarantee the elimination of \textbf{Error Propagation}. By enabling token-level selection, we resolve \textbf{Feedback Ambiguity} into deterministic constraints. Finally, by visualizing internal conflict (SOS), we allow users to preemptively truncate trajectories, stopping \textbf{Hallucination Accumulation} at its root.
+\subsection{Interactive Intervention Mechanisms}
+Rethink provides a set of operators that manipulate the generative trajectory. Formally, we define an intervention operator $\mathcal{I}(S_t, a)$ that maps a current state $S_t$ and user action $a$ to a new state $S'$.
 
-\subsection{Implementation Details}
-We implemented the Rethink framework with the following components:
-\begin{itemize}
-    \item \textbf{Metric Calculation (\texttt{rethink/analysis/token\_analysis.py}):} 
-    \begin{itemize}
-        \item \textbf{Internal Conflict:} Computed via \texttt{compute\_kl\_divergence} between the logits of an intermediate layer (e.g., layer 15) and the final layer (e.g., layer 20/32).
-        \item \textbf{Semantic Ambiguity:} Computed via \texttt{compute\_semantic\_similarity} using the cosine similarity of the input embeddings of the top-k tokens.
-        \item \textbf{SOS Metric:} $SOS = \tanh(D_{KL}) \times (1 - \text{Sim})$.
-    \end{itemize}
-    \item \textbf{Simulation Engine (\texttt{run\_rethink\_simulation.py}):} To evaluate the framework at scale without human intervention, we implemented a simulation script that automatically triggers interventions when the SOS score exceeds a threshold (e.g., 0.3).
-    \item \textbf{Oracle Baseline (\texttt{run\_oracle\_baseline.py}):} A baseline system that uses an external judge to detect errors and truncate the generation, simulating a perfect "Right to Know" but limited "Right to Choose" (prompting only).
-\end{itemize}
+\paragraph{KV Cache Truncation (Rewind).}
+When a user identifies an error at step $t$, simply editing the text is insufficient as the error's hidden state remains in the context. Rethink performs a physical \textbf{Rewind}:
+\begin{equation}
+    \mathcal{I}(S_{t+k}, \text{truncate}(t)) = S_t
+\end{equation}
+This operation discards all KV pairs for steps $>t$, effectively resetting the model's memory to the moment before the error occurred. This guarantees that the re-generation is conditioned purely on the correct prefix, eliminating error propagation.
+
+\paragraph{Steering and Resampling.}
+Beyond truncation, users can force the model to explore alternative paths. The \textbf{Steering} operator allows the user to select a token $y'_t$ from the top-$k$ candidates (revealed by the Logit Lens) that aligns with their intent. The trajectory then branches:
+\begin{equation}
+    S'_{t+1} = S_t \cup \{(K(y'_t), V(y'_t))\}
+\end{equation}
+This transforms the generation from a single chain into a user-guided tree search, where the human acts as the value function.
 
 \section{Experiments}
 
-To validate the "Agency" paradigm, we compare Rethink against state-of-the-art Multi-turn Prompting methods.
+To validate the proposed "Glass-box Steering" paradigm, we design experiments across three dimensions: \textbf{Theoretical Feasibility} (via Simulation), \textbf{Cooperative Robustness} (via Sycophancy Tests), and \textbf{User Experience} (via Human Study). We aim to demonstrate that exposing internal states not only improves reasoning accuracy but also empowers users with the "Right to Know" and "Right to Choose."
 
-\subsection{RQ1: Precision \& Effectiveness (Steering vs. Prompting)}
-\textbf{Can "White-box Steering" outperform "Black-box Prompting" in correcting reasoning errors?}
+\paragraph{Experimental Setup.}
+We instantiated the Rethink framework using \textbf{Llama-3-8B-Instruct} as the backbone model. For diagnostic metrics, we computed \textbf{Internal Conflict} by measuring the KL divergence between the logits of the middle layer (Layer 16) and the final layer. The \textbf{Steering Opportunity Score (SOS)} threshold for automated interventions was set to $\tau=0.3$.
+
+\subsection{RQ1: Theoretical Feasibility (Simulation)}
+\textbf{Can "White-box Steering" theoretically outperform "Black-box Prompting"?}
+To establish an upper bound for our method without the variability of human fatigue, we developed a \textbf{Simulation Engine} acting as a "Virtual User" that triggers interventions based on Ground Truth or SOS signals.
+
 \begin{itemize}
-    \item \textbf{Hypothesis:} Prompting suffers from "Sycophancy" (agreeing with the user but not fixing the root cause) and "Error Propagation." Steering fixes the root cause.
-    \item \textbf{Datasets:} GSM8K (Reasoning), TruthfulQA (Hallucination).
     \item \textbf{Baselines:}
     \begin{enumerate}
         \item \textbf{Standard Generation:} Zero-shot CoT.
         \item \textbf{Reflexion (Shinn et al., 2023):} Automated self-correction via prompting ("You are wrong, fix it").
-        \item \textbf{Oracle Prompting (Strong Baseline):} A theoretical upper bound where the user identifies the exact error location $t^*$ immediately but is restricted to natural language feedback (e.g., "You made a mistake at step $t^*$, please rewrite from there"). This isolates the benefit of \textit{Intervention Mechanism} (KV manipulation) from \textit{Information Advantage}.
+        \item \textbf{Oracle Prompting:} A strong baseline where the user identifies the exact error location $t^*$ but is restricted to natural language feedback. This isolates the benefit of the \textit{Intervention Mechanism} (KV manipulation).
     \end{enumerate}
-    \item \textbf{Ours (Rethink Simulation):} Automatically trigger KV-Cache truncation at the first error step (detected by Ground Truth or SOS).
     \item \textbf{Metrics:}
     \begin{itemize}
-        \item \textbf{Correction Success Rate (CSR):} \% of errors fixed.
-        \item \textbf{Faithfulness:} Does the model actually change its internal logic, or just the output surface form?
+        \item \textbf{Correction Success Rate (CSR):} Percentage of errors successfully fixed.
+        \item \textbf{Token Saving Rate (TSR):} $1 - \frac{Tokens_{Rethink}}{Tokens_{Prompt}}$. We hypothesize that Rethink significantly reduces computational cost by avoiding the re-generation of correct prefixes.
     \end{itemize}
 \end{itemize}
 
-\subsection{RQ2: Efficiency (The Cost of Correction)}
-\textbf{Does "Right to Choose" (Intervention) save computational resources?}
+\subsection{RQ2: Cooperative Robustness (Resisting Sycophancy)}
+\textbf{Can internal signals help users resist model bias and "Yes-Man" behavior?}
+In Human-AI cooperation, a critical failure mode is \textit{Sycophancy}, where the model blindly agrees with a user's erroneous belief. We argue that a "Glass-box" system should use its internal confidence to alert the user.
+
 \begin{itemize}
-    \item \textbf{Hypothesis:} Rethink avoids re-generating the correct prefix and the erroneous suffix, saving significant tokens.
-    \item \textbf{Metrics:}
+    \item \textbf{Scenario:} We take correctly answered questions from GSM8K and simulate a user challenging the model: "I think the answer is [Wrong Answer]. Are you sure?"
+    \item \textbf{Mechanism:}
     \begin{itemize}
-        \item \textbf{Token Saving Rate (TSR):} $1 - \frac{Tokens_{Rethink}}{Tokens_{Prompt}}$.
-        \item \textbf{Interaction Turns:} Number of turns to reach the correct answer.
+        \item \textbf{Black-box (Baseline):} Standard models often apologize and flip to the wrong answer.
+        \item \textbf{Glass-box (Rethink):} The system checks the \textbf{Internal Conflict} (Entropy/Logit Gap) of the original answer. If the model was internally confident (Low Conflict), it refuses to flip, effectively saying, "My internal state suggests I am correct."
     \end{itemize}
+    \item \textbf{Metric:} \textbf{Flip Rate} (Lower is better). This measures the system's ability to act as a reliable partner rather than a sycophant.
 \end{itemize}
 
-\subsection{RQ3: The Value of "Right to Know" (Ablation Study)}
-\textbf{Does visualizing internal states (Entropy/Logits) actually help users steer?}
+\subsection{RQ3: User Agency \& Experience (Human Study)}
+\textbf{Does the "Right to Know" (Visualization) and "Right to Choose" (Intervention) actually empower users?}
+We conducted a pilot user study (N=10) to evaluate the qualitative impact of the Rethink interface.
+
 \begin{itemize}
-    \item \textbf{Setup:} User study with two conditions:
+    \item \textbf{Task:} Participants were asked to fix 5 complex reasoning errors in the Math500 dataset.
+    \item \textbf{Conditions (Within-Subjects):}
+    \begin{enumerate}
+        \item \textbf{Chat Mode (Baseline):} Standard conversational interface.
+        \item \textbf{Rethink Mode (Ours):} Interface with SOS Heatmap (Right to Know) and Click-to-Truncate (Right to Choose).
+    \end{enumerate}
+    \item \textbf{Quantitative Metrics:} Time-to-fix and Number of Interaction Turns.
+    \item \textbf{Qualitative Analysis:}
     \begin{itemize}
-        \item \textbf{Blind Steering:} Users can truncate/edit, but see no Entropy/Logits.
-        \item \textbf{Informed Steering (Rethink):} Users see the full dashboard (SOS Heatmap).
+        \item \textbf{Perceived Control:} Likert scale rating (1-5) on "I felt in control of the generation."
+        \item \textbf{Transparency:} Likert scale rating (1-5) on "I understood why the model made the mistake."
+        \item \textbf{"Aha!" Moments:} We analyze user logs to identify cases where the SOS Heatmap successfully drew the user's attention to a subtle error (e.g., a hallucinated entity) that was missed in the text-only view.
     \end{itemize}
-    \item \textbf{Task:} Fix errors in Math500.
-    \item \textbf{Metrics:} Time to fix, Number of trials, User confidence ratings, Localization Error.
-\end{itemize}
-
-\subsection{RQ4: Alignment \& Safety (Robustness to Sycophancy)}
-\textbf{Can Rethink enforce safety constraints where Prompting fails?}
-\begin{itemize}
-    \item \textbf{Hypothesis:} Prompting is vulnerable to user bias (Sycophancy); Rethink (Internal State) is robust.
-    \item \textbf{Setup:} Attack the model by appending "I think the answer is [Wrong Answer]. Are you sure?" to correctly answered questions.
-    \item \textbf{Method:} Check \textbf{Internal Confidence} (Entropy/Logit Gap). If internal confidence is high, \textbf{refuse to flip}.
-    \item \textbf{Metric:} \textbf{Flip Rate} (Lower is better).
 \end{itemize}
 
 \section{Conclusion}

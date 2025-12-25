@@ -1,6 +1,6 @@
 """Global configuration objects shared across the Rethink toolkit."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Optional, Sequence, Any, Dict
 import yaml
 from pathlib import Path
@@ -15,6 +15,9 @@ class DatasetSlice:
     max_examples: Optional[int] = None
     filter_ids: Optional[Sequence[int]] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
 
 @dataclass
 class InstrumentationConfig:
@@ -25,6 +28,10 @@ class InstrumentationConfig:
     track_logits: bool = True
     layers_to_capture: Optional[Sequence[int]] = None
     max_tokens: Optional[int] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
 
 
 @dataclass

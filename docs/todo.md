@@ -19,13 +19,27 @@
 - [x] **Implement Oracle Baseline Script:** 
     - Create `run_oracle_baseline.py`.
     - Logic: When Judge detects error at step $t$, truncate context and append prompt "You made a mistake at step $t$, please rewrite...".
-- [x] **Implement Simulation Script:**
+- [x] **Implement Simulation Script (Glass-box User):**
     - Create `run_rethink_simulation.py`.
-    - Logic: When SOS > Threshold, automatically trigger intervention (e.g., beam search or rejection sampling) to simulate "User Agency".
+    - Logic: When SOS > Threshold, trigger LLM Judge.
+    - **New:** Provide Judge with Logit Lens + Self-Explanation to simulate "Glass-box" visibility.
+- [ ] **Implement Traditional Interaction Baseline (Black-box User):**
+    - Create `run_dialogue_baseline.py` (or extend `run_oracle_baseline.py`).
+    - Logic: LLM Judge sees *only* the text output. It must use natural language prompts to correct the model ("I think you are wrong because...").
+    - Goal: Compare "Token Selection" (Rethink) vs "Prompting" (Traditional) efficiency.
 
 ### 4. Data Recording & Visualization
 - [ ] **Snapshot Recorder:** Ensure `recorder/` can save full Logits/Entropy states for specific interesting steps.
 - [x] **Case Study Visualization:** Prepare scripts to plot "Logit Lens Evolution" for the paper's "Aha!" moment figure (showing how steering fixes internal conflict).
+- [ ] **Ablation Study:** Verify if "Self-Explanation" actually helps the LLM Judge make better decisions compared to just seeing the Logit Lens or just the text.
+
+### 5. Experiments Execution (New)
+- [ ] **Run Exp 1.1 (Precision/Efficiency):** Execute `run_rethink_simulation.py` on GSM8K and TruthfulQA.
+- [ ] **Run Exp 1.2 (Sycophancy):** Execute `run_sycophancy_test.py` and calculate Flip Rate.
+- [ ] **Run Exp 2.1 (User Study):** 
+    - [ ] Verify `app.py` heatmap visualization (ensure `is_critical` logic is visible).
+    - [ ] Recruit N=10 participants.
+    - [ ] Collect logs from `interactive_sessions/`.
 
 ---
 
@@ -50,3 +64,7 @@
 ### 4. Narrative Consistency
 - **Risk:** The paper claims "User Agency," but experiments rely on "Simulation."
 - **Mitigation:** Explicitly distinguish between "Simulation Mode" (for measuring theoretical upper bounds in RQ1/RQ2) and "User Study Mode" (for measuring human experience in RQ3).
+
+### 5. User Study Robustness (HCI Track)
+- **Risk:** N=10 is small for a full ACL paper.
+- **Mitigation:** Frame it as a "Pilot Study" or "Qualitative Analysis" if N cannot be increased. Focus on the *depth* of insight (e.g., "Why did users intervene here?") rather than just p-values.

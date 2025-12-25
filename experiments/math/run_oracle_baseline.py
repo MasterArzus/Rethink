@@ -1,9 +1,13 @@
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 import argparse
 import torch
 import json
 import re
-from datasets import load_dataset
+import os
+from datasets import load_dataset, load_from_disk
 from transformers import AutoTokenizer, AutoConfig
 from rethink.engine.llama import RethinkLlamaForCausalLM
 from rethink.utils.config import RethinkConfig, InstrumentationConfig
@@ -134,7 +138,17 @@ def main():
     )
     
     # Load Dataset
-    if args.dataset == "gsm8k":
+    dataset_path = os.path.join("dataset", args.dataset)
+    if os.path.exists(dataset_path):
+        print(f"Loading local dataset from {dataset_path}...")
+        ds = load_from_disk(dataset_path)
+        if "test" in ds:
+            ds = ds["test"]
+        elif "validation" in ds:
+            ds = ds["validation"]
+        # Slice for quick testing
+        ds = ds.select(range(min(10, len(ds))))
+    elif args.dataset == "gsm8k":
         ds = load_dataset("gsm8k", "main", split="test[:10]") # Increased to 10 for better stats
     else:
         raise ValueError("Dataset not supported")

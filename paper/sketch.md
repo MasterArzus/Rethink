@@ -131,6 +131,7 @@ To validate the "Agency" paradigm, we compare Rethink against state-of-the-art M
 *   **Method:** Check **Internal Confidence** (Entropy/Logit Gap). If internal confidence is high, **refuse to flip**.
 *   **Metric:** **Flip Rate** (Lower is better).
 
+上下文召回率
 
 
 ## Conclusion
@@ -138,6 +139,8 @@ The construction of the Rethink framework is grounded in the philosophy of **"So
 
 ## Limitations
 Due to time and resource constraints, this work is presented as a reproducible demo rather than a comprehensive system like LLaMA Factory. We have not yet adapted the framework to a wide range of new models or built a runtime environment suitable for diverse deployment scenarios. Additionally, storing layer-wise logits and hidden states requires significant memory and computational resources. Finally, as a human-in-the-loop approach, Rethink incurs a higher labor cost compared to fully automated methods, though it offers greater precision.
+
+机器占主导地位的话效率提高，人占主导地位的话质量提高
 
 ## Future Work
 The interaction paradigm introduced by Rethink can serve as an advanced "Debug Mode" for users with high requirements for reasoning accuracy and preference alignment. Future work will focus on improving the **Steering Opportunity Score (SOS)** and recommendation algorithms to provide users with more fine-grained, personalized analysis and suggestions. We also aim to explore **automated steering** strategies that can learn from human interventions to reduce the need for manual oversight.
