@@ -25,3 +25,4 @@ dataset/truthful_qa/
 dataset/stsb/
 dataset/hydrology_qa
 outputs/
+*.github/

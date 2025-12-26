@@ -113,13 +113,14 @@ class RethinkController:
 
         recorder = HiddenStateRecorder(layers=layers)
         generated_ids = prompt_ids
+        curr_input_ids = prompt_ids
         past_key_values = None
         token_logs: List[TokenRecorder] = []
 
         with recorder.attach(self.model):
             for step, token_id in enumerate(target_ids[0].tolist()):
                 outputs = self.model.forward(
-                    input_ids=generated_ids,
+                    input_ids=curr_input_ids,
                     use_cache=True,
                     past_key_values=past_key_values,
                     return_dict=True,
@@ -151,6 +152,7 @@ class RethinkController:
 
                 next_token = torch.tensor([[token_id]], device=device)
                 generated_ids = torch.cat([generated_ids, next_token], dim=-1)
+                curr_input_ids = next_token
 
         return token_logs[-1]
 

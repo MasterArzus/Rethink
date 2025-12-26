@@ -167,9 +167,10 @@ def main():
             with recorder_ctx:
                 past_key_values = None
                 generated_ids = input_ids
+                curr_input_ids = input_ids
                 for step in range(generation_kwargs.get("max_new_tokens", 128)):
                     outputs = super(RethinkLlamaForCausalLM, self).forward(
-                        input_ids=generated_ids,
+                        input_ids=curr_input_ids,
                         use_cache=True,
                         past_key_values=past_key_values,
                         return_dict=True,
@@ -196,6 +197,7 @@ def main():
                     
                     token_logs.append(TokenRecorder(token_id, step, token_str, 0.0, 0.0, current_states, extra={"sos": sos_score}))
                     generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
+                    curr_input_ids = next_token.to(device)
                     
                     if token_id == tokenizer.eos_token_id:
                         break

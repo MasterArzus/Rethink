@@ -88,6 +88,7 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
                 )
                 next_token = torch.tensor([[token_id]], device=device)
                 generated_ids = torch.cat([generated_ids, next_token], dim=-1)
+                curr_input_ids = next_token
                 if max_new_tokens and step + 1 >= max_new_tokens:
                     break
 
@@ -133,9 +134,11 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         with ctx_manager:
             past_key_values = None
             generated_ids = input_ids
+            curr_input_ids = input_ids
+
             for step in range(generation_kwargs.get("max_new_tokens", 128)):
                 outputs = super().forward(
-                    input_ids=generated_ids,
+                    input_ids=curr_input_ids,
                     use_cache=True,
                     past_key_values=past_key_values,
                     return_dict=True,
