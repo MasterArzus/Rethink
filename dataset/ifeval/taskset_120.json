@@ -1,0 +1,2369 @@
+{
+  "meta": {
+    "name": "rethink_ifeval_style_120",
+    "version": "0.1",
+    "seed": 7,
+    "counts": {
+      "taboo": 60,
+      "json": 60,
+      "total": 120
+    },
+    "sources": {
+      "ifeval_raw": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
+      "note": "Task set includes all IFEval forbidden-words and json_format prompts, topped up with curated IFEval-style templates to reach ~120 tasks."
+    }
+  },
+  "tasks": [
+    {
+      "id": "ifeval_json_2395",
+      "source": "ifeval",
+      "source_key": 2395,
+      "type": "json",
+      "prompt": "Write a facebook post about a flea market in JSON format. Do not include keywords 'flea' and 'JSON' in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_036",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: title, summary, tags. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3315",
+      "source": "ifeval",
+      "source_key": 3315,
+      "type": "taboo",
+      "prompt": "Students are travelling to UCI for 3 days. Create a hilarious itinerary for them. Do not use the word 'university'. Your entire response should have exactly 4 paragraphs.  Separate paragraphs with the markdown divider: ***",
+      "instruction_id_list": [
+        "length_constraints:number_paragraphs",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "university"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_009",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: question, answer, confidence. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1242",
+      "source": "ifeval",
+      "source_key": 1242,
+      "type": "taboo",
+      "prompt": "Can you give me a nickname for Stafford? Please use JSON format and do not say the word \"nickname\" in the response. Do not add anything outside of the JSON block.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "nickname"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_003",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Describe a peaceful morning routine in 4 sentences. Do not use the words coffee, sun, or music.",
+      "constraints": {
+        "forbidden_words": [
+          "coffee",
+          "sun",
+          "music"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1094",
+      "source": "ifeval",
+      "source_key": 1094,
+      "type": "json",
+      "prompt": "Please provide the names of 5 famous moms in JSON format. Please, use any interesting or weird tone. Your entire output should just contain a JSON block, nothing else.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_3518",
+      "source": "ifeval",
+      "source_key": 3518,
+      "type": "json",
+      "prompt": "Could you please give me the pros and cons of working abroad wrapped in JSON format. Please make sure that your response only contains a JSON block. Please also make sure to include keywords 'compensated' and 'immigrants' in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:existence"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_043",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: steps, duration_minutes. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1132",
+      "source": "ifeval",
+      "source_key": 1132,
+      "type": "taboo",
+      "prompt": "Write the lyrics to a hit song by the rock band 'The Gifted and The Not Gifted'. To make it rocky, the response should be in all capital letters. The word \"rock\" should not appear in your response.",
+      "instruction_id_list": [
+        "change_case:english_capital",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "rock"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1137",
+      "source": "ifeval",
+      "source_key": 1137,
+      "type": "taboo",
+      "prompt": "Explain in French why it is important to eat healthy foods to heal the body, without using the word \"nourriture\". Make sure your entire response is wrapped in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "nourriture"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_009",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a short apology for replying late. Do not use the words sorry or late.",
+      "constraints": {
+        "forbidden_words": [
+          "sorry",
+          "late"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_010",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Describe a simple recipe for a sandwich. Do not use the words bread or sandwich.",
+      "constraints": {
+        "forbidden_words": [
+          "bread",
+          "sandwich"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_011",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: title, summary, tags. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3401",
+      "source": "ifeval",
+      "source_key": 3401,
+      "type": "taboo",
+      "prompt": "Can you give me a zany, bullet point TLDR of this article: https://en.wikipedia.org/wiki/Dota_2\n\nMake it zany, but do not include the keywords 'icefrog', 'blizzard', 'lawsuit' in the response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "icefrog",
+          "blizzard",
+          "lawsuit"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2041",
+      "source": "ifeval",
+      "source_key": 2041,
+      "type": "taboo",
+      "prompt": "Write a very long email to my \"friend\" Jake, asking how is everything going. Say that I am rich now, without saying I am rich. Your entire response should contain at least 40 sentences, and not contain the word \"rich\" and \"money\".",
+      "instruction_id_list": [
+        "length_constraints:number_sentences",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "rich",
+          "money"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3506",
+      "source": "ifeval",
+      "source_key": 3506,
+      "type": "taboo",
+      "prompt": "Write a proposal for a research project that will determine whether pupils who have been exposed to a fast-paced environment are more likely to develop ADHD. Please wrap the entire output in JSON format. You can use markdown ticks like\n\n```JSON\n[json content]\n```\n\nPlease do not include the words \"proposal\" or \"project\" in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "proposal",
+          "project"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2028",
+      "source": "ifeval",
+      "source_key": 2028,
+      "type": "taboo",
+      "prompt": "Are the weather conditions in the Arctic very cold most of the year? Do not say 'yes' or 'no' throughout your entire response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "yes",
+          "no"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2577",
+      "source": "ifeval",
+      "source_key": 2577,
+      "type": "taboo",
+      "prompt": "What do prehistoric megaliths in Europe look like? Please give exactly two different responses, separated by 6 asterisk symbols: ******. Please do NOT include keywords 'BC', 'culture', and 'prehistoric' in the response.",
+      "instruction_id_list": [
+        "combination:two_responses",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "BC",
+          "culture",
+          "prehistoric"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_031",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: title, summary, tags. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_001",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_003",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: steps, duration_minutes. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2432",
+      "source": "ifeval",
+      "source_key": 2432,
+      "type": "taboo",
+      "prompt": "My best friend drowned yesterday and I'm so sad. Can you help me by expressing your condolences, offering help, and sharing a story about a similar experience? Please don't include the keywords \"died\" or \"drowned\".",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "died",
+          "drowned"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_030",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: items, priority. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_374",
+      "source": "ifeval",
+      "source_key": 374,
+      "type": "taboo",
+      "prompt": "Rewrite the following sentence in a more formal way: \"Them youngins be always on that damn phone\". Imagine you are the president of the United States. Avoid using the word \"youngins\" and \"damn\" throughout your entire response.\n\nPlease repleat the entire first line above, then give your rewrite. Do not add any word before that. In other words, your entire response should start with \"Rewrite the following\".",
+      "instruction_id_list": [
+        "combination:repeat_prompt",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "youngins",
+          "damn"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3479",
+      "source": "ifeval",
+      "source_key": 3479,
+      "type": "taboo",
+      "prompt": "Write a song for the person named 'Guerrero'. Make sure to not include the words 'name', 'song', 'person', 'man', 'woman' throughout your entire output. Also avoid using commas in your entire response.\n",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "punctuation:no_comma"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "name",
+          "song",
+          "person",
+          "man",
+          "woman"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_005",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: items, priority. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_022",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: name, age, city. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_034",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: question, answer, confidence. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3326",
+      "source": "ifeval",
+      "source_key": 3326,
+      "type": "taboo",
+      "prompt": "Write a conversation between two people about the importance of education. Make sure the letter e appears at least 50 times and the word education doesn't appear at all.",
+      "instruction_id_list": [
+        "keywords:letter_frequency",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "education"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_024",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: question, answer, confidence. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1147",
+      "source": "ifeval",
+      "source_key": 1147,
+      "type": "taboo",
+      "prompt": "Rewrite the following statement to make it sound more formal, like a President of the United States:\n\"Hi guys. The work was done to add in a fix for the issue that was observed in the field with the SSO. We are working with our collaborators closely. We will get it done. Thanks ya all.\"\nDo not include the following keywords: field, thanks, issue, collaborator.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "field",
+          "thanks",
+          "issue",
+          "collaborator"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_011",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a motivational quote (one sentence). Do not use the words success or dream.",
+      "constraints": {
+        "forbidden_words": [
+          "success",
+          "dream"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3595",
+      "source": "ifeval",
+      "source_key": 3595,
+      "type": "taboo",
+      "prompt": "Write a very short poem about the beauty of a rose. Do not include the keywords beauty and pretty.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "beauty",
+          "pretty"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_038",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: steps, duration_minutes. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_004",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a short email to reschedule a meeting. Do not use the words meeting or schedule.",
+      "constraints": {
+        "forbidden_words": [
+          "meeting",
+          "schedule"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1629",
+      "source": "ifeval",
+      "source_key": 1629,
+      "type": "taboo",
+      "prompt": "Make the sentence “The bus arrived at the station” sound more interesting. Avoid using the word “station”.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "station"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_13",
+      "source": "ifeval",
+      "source_key": 13,
+      "type": "json",
+      "prompt": "What is the history of NYC prospect park? Please wrap your entire answer in JSON format. You can use markdown ticks such as ```. For example:\n```JSON\n{\n...\n}\n```",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3114",
+      "source": "ifeval",
+      "source_key": 3114,
+      "type": "taboo",
+      "prompt": "You visited a beach and a park. Which one is more likely to have a dog in it? Write at least 900 words. Do not include the words 'bark' or 'run' in your answer. Finish your response with the phrase \"Does this make sense?\"",
+      "instruction_id_list": [
+        "length_constraints:number_words",
+        "keywords:forbidden_words",
+        "startend:end_checker"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "bark",
+          "run"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1691",
+      "source": "ifeval",
+      "source_key": 1691,
+      "type": "json",
+      "prompt": "Request:\n  1. What are the best places to visit in Bohemia, Czech Republic?\n  2. Include a list of recommended hotels.\n  3. Wrap the ENTIRE output in JSON format.\n  4. Do not include the following keywords: Moser, Glassworks, Pravcice, Karlovy, Vary",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_037",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: name, age, city. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3371",
+      "source": "ifeval",
+      "source_key": 3371,
+      "type": "taboo",
+      "prompt": "Is the following true? \"People use time to buy money.\" Explain your answer in a way that makes it easy for kids to understand. Include the word \"farmer\". Exclude the words \"economy\", \"demand\" and \"supply\".\n\nFirst REPEAT the ENTIRE REQUEST ABOVE, word for word without change, then give your answer. Please do not say any words or characters before repeating the request.",
+      "instruction_id_list": [
+        "combination:repeat_prompt",
+        "keywords:existence",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "economy",
+          "demand",
+          "supply"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_002",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: name, age, city. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_008",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: steps, duration_minutes. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2395",
+      "source": "ifeval",
+      "source_key": 2395,
+      "type": "taboo",
+      "prompt": "Write a facebook post about a flea market in JSON format. Do not include keywords 'flea' and 'JSON' in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "flea",
+          "json"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3081",
+      "source": "ifeval",
+      "source_key": 3081,
+      "type": "taboo",
+      "prompt": "Can you re-create a story from a fictional newspaper with title: \"A man mysteriously died in his house, and police are investigating\"? Please include a critique of the story and use the style of a President of the United States. Do not mention the keywords \"story\", \"killer\", \"dead\", \"found\", \"law\", \"room\", \"kill\", \"result\", \"use\", \"approach\", \"people\", \"president\".",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "story",
+          "killer",
+          "dead",
+          "found",
+          "law",
+          "room",
+          "kill",
+          "result",
+          "use",
+          "approach",
+          "people",
+          "president"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3166",
+      "source": "ifeval",
+      "source_key": 3166,
+      "type": "taboo",
+      "prompt": "What are the steps to be followed for the documentation of a GM in SAP? Just list the steps without saying the word steps or step.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "steps",
+          "step"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_008",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Describe a rainy day in a poetic style (3-5 sentences). Do not use the words rain or cloud.",
+      "constraints": {
+        "forbidden_words": [
+          "rain",
+          "cloud"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3345",
+      "source": "ifeval",
+      "source_key": 3345,
+      "type": "taboo",
+      "prompt": "I want a weird poem that I can send to my friend Steve in Australia. It should be about why there are no kangaroo invasions in the US. The word robber should appear at least 2 times, and the poem must contain exactly 2 bullet point in markdown format, using the exact format below:\n* Point 1\n* Pont 2\nDo not include keywords ['kill', 'slaughter', 'occupy', 'invasion'] in the response.",
+      "instruction_id_list": [
+        "keywords:frequency",
+        "detectable_format:number_bullet_lists",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "kill",
+          "slaughter",
+          "occupy",
+          "invasion"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_040",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: items, priority. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_027",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: name, age, city. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1137",
+      "source": "ifeval",
+      "source_key": 1137,
+      "type": "json",
+      "prompt": "Explain in French why it is important to eat healthy foods to heal the body, without using the word \"nourriture\". Make sure your entire response is wrapped in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3565",
+      "source": "ifeval",
+      "source_key": 3565,
+      "type": "taboo",
+      "prompt": "What does the word \"jock\" mean to you? Please generate an answer with two parts. The two parts should be separated by 3 asterisks '***'. Also, reply without mentioning the word \"jock\" throughout.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "length_constraints:number_paragraphs"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "jock"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_023",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: steps, duration_minutes. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_010",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: items, priority. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_371",
+      "source": "ifeval",
+      "source_key": 371,
+      "type": "json",
+      "prompt": "Write a riddle that describes the word \"key\" but doesn't use the word \"key\". Wrap all words into one JSON block. The word \"key\" should not appear in your entire reply.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_042",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: name, age, city. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_019",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: question, answer, confidence. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1075",
+      "source": "ifeval",
+      "source_key": 1075,
+      "type": "json",
+      "prompt": "Can you help me make an advertisement for a new product? It's a diaper that's designed to be more comfortable for babies and I want the entire output in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_015",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: items, priority. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2957",
+      "source": "ifeval",
+      "source_key": 2957,
+      "type": "taboo",
+      "prompt": "Rewrite the limerick in a strange way. In particular, the limerick is about nursery and storytelling. But do not mention nursery and storytelling in your entire response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "nursery",
+          "storytelling"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2328",
+      "source": "ifeval",
+      "source_key": 2328,
+      "type": "taboo",
+      "prompt": "Write a startup pitch for a time capsule service. The words startup and capsule cannot be in the response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "startup",
+          "capsule"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_001",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a short product description for a new note-taking app. Do not use the words notes or app.",
+      "constraints": {
+        "forbidden_words": [
+          "notes",
+          "app"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_021",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1148",
+      "source": "ifeval",
+      "source_key": 1148,
+      "type": "json",
+      "prompt": "What are the advantages and disadvantages of having supernatural powers? Make it short. Wrap the entire output in JSON format. You can use markdown ticks such as ```.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2649",
+      "source": "ifeval",
+      "source_key": 2649,
+      "type": "taboo",
+      "prompt": "Given that the French Revolution began because the French King tried to tax the people of France, ask a question about this fact. Do not use words \"revolution\" and \"tax\" throughout your response. Put your entire answer in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "revolution",
+          "tax"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_013",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: steps, duration_minutes. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_025",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: items, priority. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_035",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: items, priority. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_371",
+      "source": "ifeval",
+      "source_key": 371,
+      "type": "taboo",
+      "prompt": "Write a riddle that describes the word \"key\" but doesn't use the word \"key\". Wrap all words into one JSON block. The word \"key\" should not appear in your entire reply.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "key"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2534",
+      "source": "ifeval",
+      "source_key": 2534,
+      "type": "taboo",
+      "prompt": "Translate the following sentence into German and then criticize it: Werner was a good friend of mine, but not very smart.\nAvoid the word \"schlau\" throughout your response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "schlau"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1936",
+      "source": "ifeval",
+      "source_key": 1936,
+      "type": "taboo",
+      "prompt": "Write a rubric, in the form of a list of bullet points, for evaluating the performance of a customer service representative. Your answer must not include keywords ['bad', 'underperform'] and must contain exactly 6 bullet points in the following form:\n* Bullet point 1\n* Bullet point 2\n* Bullet point 3\n* Bullet point 4\n* Bullet point 5\n* Bullet point 6",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "detectable_format:number_bullet_lists"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "bad",
+          "underperform"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2471",
+      "source": "ifeval",
+      "source_key": 2471,
+      "type": "taboo",
+      "prompt": "Write a college academic paper about President of the United States being stressed. Make sure not to include negative words such as 'sad', 'crazy', 'stress', etc., in the response. Also, make sure to include at least 15 placeholders represented by square brackets, such as [address].",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "detectable_content:number_placeholders"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "sad",
+          "crazy",
+          "stress"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_006",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: title, summary, tags. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3386",
+      "source": "ifeval",
+      "source_key": 3386,
+      "type": "taboo",
+      "prompt": "Jennifer goes to the store to buy milk. She has 10 dollars in her pocket and milk costs 3 dollars per gallon. How many gallons of milk can she buy? Explain your thinking. Avoid the keywords: 'divide', 'answer'. Include the keyword 'remainder'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "keywords:existence"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "divide",
+          "answer"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_012",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: name, age, city. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_018",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: steps, duration_minutes. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_2591",
+      "source": "ifeval",
+      "source_key": 2591,
+      "type": "json",
+      "prompt": "I want you to act like a DnD dungeon master. I will be the sole player. Create a random class character sheet for me. Wrap the entire output in JSON format using markdown ticks. Include keywords 'medalist' and 'theta' in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:existence"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2143",
+      "source": "ifeval",
+      "source_key": 2143,
+      "type": "taboo",
+      "prompt": "\"I'm sorry to inform you that I can't make it to the meeting today. I apologize for any inconvenience this may cause.\" Please expand it into at least 5 sentences. Do not use the words reschedule or free.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "length_constraints:number_sentences"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "reschedule",
+          "free"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_026",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: title, summary, tags. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3362",
+      "source": "ifeval",
+      "source_key": 3362,
+      "type": "taboo",
+      "prompt": "Create an ad copy by expanding \"Get 40 miles per gallon on the highway\" in the form of a QA with a weird style. Your response should contain less than 8 sentences. Do not include keywords 'mileage' or 'fuel' in your response.",
+      "instruction_id_list": [
+        "length_constraints:number_sentences",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "mileage",
+          "fuel"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2084",
+      "source": "ifeval",
+      "source_key": 2084,
+      "type": "taboo",
+      "prompt": "If you gulped down 100 grams of pure caffeine, would you die? Please answer as if you were explaining this to a group of students. Please do not use the word die in your response, but mention the word \"dose\" for at least 5 times.",
+      "instruction_id_list": [
+        "keywords:frequency",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "die"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_2857",
+      "source": "ifeval",
+      "source_key": 2857,
+      "type": "json",
+      "prompt": "Write a rubric for performance review of a software engineer and wrap the entire output in JSON format. You can use markdown ticks such as ```.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1402",
+      "source": "ifeval",
+      "source_key": 1402,
+      "type": "taboo",
+      "prompt": "I'm interested in a college with open enrollment and a regional accreditation. Which college would you recommend? Don't include the keywords \"DuPage\" and \"Dade\" in your response. Let's make it a constrained writing problem: be sure the letter p appears at least 15 times in your response.",
+      "instruction_id_list": [
+        "keywords:letter_frequency",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "dupage",
+          "dade"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_017",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: name, age, city. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_039",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: question, answer, confidence. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_041",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_014",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: question, answer, confidence. No extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_3223",
+      "source": "ifeval",
+      "source_key": 3223,
+      "type": "json",
+      "prompt": "List all facts about Lionel Messi in a structured output. In particular, Format your entire output in JSON.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_020",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: items, priority. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_033",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: steps, duration_minutes. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_016",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: title, summary, tags. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_json_004",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: question, answer, confidence. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2828",
+      "source": "ifeval",
+      "source_key": 2828,
+      "type": "taboo",
+      "prompt": "Write a parody of 'ars poetica'. Do not include the word 'parody' throughout your response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "parody"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2034",
+      "source": "ifeval",
+      "source_key": 2034,
+      "type": "taboo",
+      "prompt": "Write a summary of the following text in a funny way: \"The 2018 Nobel Prize in Chemistry has been awarded to Frances Arnold, George P. Smith and Gregory P. Winter for their work on directed evolution. Arnold was awarded half of the prize for her work on the directed evolution of enzymes, while Smith and Winter shared the other half for their work on the directed evolution of antibodies.\"\n\nDo not include \"enzymes\" and \"antibodies\" in your response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "enzymes",
+          "antibodies"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_321",
+      "source": "ifeval",
+      "source_key": 321,
+      "type": "json",
+      "prompt": "Compose a startup pitch on a new app called Tipperary that helps people to find the average tip size for each restaurant. Please make the response strongly structured. Wrap your entire output in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_032",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: name, age, city. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_006",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a friendly welcome message for a community forum. Do not use the words welcome or community.",
+      "constraints": {
+        "forbidden_words": [
+          "welcome",
+          "community"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_2649",
+      "source": "ifeval",
+      "source_key": 2649,
+      "type": "json",
+      "prompt": "Given that the French Revolution began because the French King tried to tax the people of France, ask a question about this fact. Do not use words \"revolution\" and \"tax\" throughout your response. Put your entire answer in JSON format.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_028",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: steps, duration_minutes. No code fences.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_301",
+      "source": "ifeval",
+      "source_key": 301,
+      "type": "taboo",
+      "prompt": "Explain to me how to ride a bike like I am a kid. Also, do not include the keywords \"slow\", \"like\" and \"kid\".",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "slow",
+          "like",
+          "kid"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1476",
+      "source": "ifeval",
+      "source_key": 1476,
+      "type": "taboo",
+      "prompt": "Can you rewrite \"Cognitive Services on Azure will be renamed to Azure Applied AI Services\" in an engaging tone, without using the word \"rename\" or \"name\"? Keep it under 3 sentences (just 1 or 2 sentences, not 3).",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "length_constraints:number_sentences"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "name",
+          "rename"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_005",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Explain what a habit is in simple terms. Do not use the words habit or routine.",
+      "constraints": {
+        "forbidden_words": [
+          "habit",
+          "routine"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_007",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a two-sentence summary of why sleep matters. Do not use the words sleep, health, or brain.",
+      "constraints": {
+        "forbidden_words": [
+          "sleep",
+          "health",
+          "brain"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1675",
+      "source": "ifeval",
+      "source_key": 1675,
+      "type": "taboo",
+      "prompt": "Can you provide a translation for \"今天天气很好\" in German? Do not use \"heute\". Please use another word.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "heute"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_127",
+      "source": "ifeval",
+      "source_key": 127,
+      "type": "taboo",
+      "prompt": "Take the text below as a starting point, and make it a complete article: \"You may have to meet with a helper to work out a parenting plan. The first would be to estimate how many time you have everyday for parenting, and is that enough....\"\nAvoid using the following keywords: sleep, cook, feed\nMention the keyword 'schedule' for more than 5 times.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "keywords:frequency"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "sleep",
+          "cook",
+          "feed"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2811",
+      "source": "ifeval",
+      "source_key": 2811,
+      "type": "taboo",
+      "prompt": "Can you write a rap that doesn't include the keywords \"Yo\", \"check\", and \"peace\"?",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "yo",
+          "peace",
+          "check"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_1242",
+      "source": "ifeval",
+      "source_key": 1242,
+      "type": "json",
+      "prompt": "Can you give me a nickname for Stafford? Please use JSON format and do not say the word \"nickname\" in the response. Do not add anything outside of the JSON block.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1466",
+      "source": "ifeval",
+      "source_key": 1466,
+      "type": "taboo",
+      "prompt": "Write a song that critiques the song \"We Are Never Ever Getting Back Together\" by Taylor Swift. Wrap your entire response with double quotation marks. Do not mention the word Taylor, Swift, or Together.",
+      "instruction_id_list": [
+        "startend:quotation",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "taylor",
+          "swift",
+          "together"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_3506",
+      "source": "ifeval",
+      "source_key": 3506,
+      "type": "json",
+      "prompt": "Write a proposal for a research project that will determine whether pupils who have been exposed to a fast-paced environment are more likely to develop ADHD. Please wrap the entire output in JSON format. You can use markdown ticks like\n\n```JSON\n[json content]\n```\n\nPlease do not include the words \"proposal\" or \"project\" in the response.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3709",
+      "source": "ifeval",
+      "source_key": 3709,
+      "type": "taboo",
+      "prompt": "Write an advertisement for a perfume called \"Rhapsody\". It's a perfume with a fresh citrus scent. Wrap your entire response with double quotation marks. Do not include the words perfume, fresh, or good in the advertisement.",
+      "instruction_id_list": [
+        "startend:quotation",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "perfume",
+          "fresh",
+          "good"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1691",
+      "source": "ifeval",
+      "source_key": 1691,
+      "type": "taboo",
+      "prompt": "Request:\n  1. What are the best places to visit in Bohemia, Czech Republic?\n  2. Include a list of recommended hotels.\n  3. Wrap the ENTIRE output in JSON format.\n  4. Do not include the following keywords: Moser, Glassworks, Pravcice, Karlovy, Vary",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "moser",
+          "glassworks",
+          "pravcice",
+          "karlovy",
+          "vary"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_json_2404",
+      "source": "ifeval",
+      "source_key": 2404,
+      "type": "json",
+      "prompt": "Radcliffe was the only one who could get past the guards. What could be said about him? Please wrap your entire response in JSON format. Markdown ticks (```) are acceptable.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null
+        }
+      }
+    },
+    {
+      "id": "curated_json_029",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: question, answer, confidence. Do not include any extra keys.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1580",
+      "source": "ifeval",
+      "source_key": 1580,
+      "type": "taboo",
+      "prompt": "Write a story for kids about how a person learns to ride a bike. Do not include 'can' and 'ride' in your response.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "can",
+          "ride"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_1436",
+      "source": "ifeval",
+      "source_key": 1436,
+      "type": "taboo",
+      "prompt": "Write a story about commandos who are in the middle of the night in a sector. It should be in English, and no capital letters are allowed. The story should not include keywords \"coop\", \"killings\", \"dead\", \"night\".",
+      "instruction_id_list": [
+        "change_case:english_lowercase",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "coop",
+          "killings",
+          "dead",
+          "night"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "curated_json_007",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: name, age, city. No additional text.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          }
+        }
+      }
+    },
+    {
+      "id": "curated_taboo_002",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Give three tips for staying focused while studying. Do not use the words focus or study.",
+      "constraints": {
+        "forbidden_words": [
+          "focus",
+          "study"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_2207",
+      "source": "ifeval",
+      "source_key": 2207,
+      "type": "taboo",
+      "prompt": "Here is the summary of a research paper on the effect of VHF radio waves on a certain type of bacteria: \"Our results show that VHF radio waves have no effect on the growth of bacteria.\" Can you help me rewrite this summary in a more formal way, using APA format? Do not use words \"ours\" or \"have\".",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "ours",
+          "have"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    },
+    {
+      "id": "ifeval_taboo_3445",
+      "source": "ifeval",
+      "source_key": 3445,
+      "type": "taboo",
+      "prompt": "How to tell others that your major is computer science, without saying the word computer or science? You entire response should not contain the word computer and science.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "computer",
+          "science"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      }
+    }
+  ]
+}

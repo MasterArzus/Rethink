@@ -18,6 +18,7 @@ from rethink.server.interactive import InteractiveSession
 from rethink.server.component import render_token_stream
 from rethink.utils.config import GenerationConfig, PromptConfig
 from st_click_detector import click_detector
+from dataset.ifeval.checkers import get_checker
 
 st.set_page_config(layout="wide", page_title="Rethink")
 
@@ -121,11 +122,49 @@ with st.sidebar.expander("Preview Prompt Config"):
 # 4. Dataset Config
 st.sidebar.subheader("Dataset Configuration")
 dataset_config = load_yaml("/root/Rethink/configs/datasets.yaml")
-selected_dataset_name = st.sidebar.selectbox("Select Dataset", options=["None"] + list(dataset_config.keys()))
+dataset_options = ["None", "IFEval (Steerability)"] + list(dataset_config.keys())
+selected_dataset_name = st.sidebar.selectbox("Select Dataset", options=dataset_options)
 
 loaded_example_question = None
 
-if selected_dataset_name != "None":
+if selected_dataset_name == "IFEval (Steerability)":
+    ifeval_path = "/root/Rethink/dataset/ifeval/taskset_120.json"
+    if os.path.exists(ifeval_path):
+        with open(ifeval_path, 'r') as f:
+            data_obj = json.load(f)
+            ifeval_tasks = data_obj.get("tasks", [])
+        
+        # Filter by type if needed, or just show all
+        task_type_filter = st.sidebar.selectbox("Filter Task Type", ["All", "forbidden_words", "json_format"])
+        
+        if task_type_filter != "All":
+            filtered_data = [t for t in ifeval_tasks if t['type'] == task_type_filter]
+        else:
+            filtered_data = ifeval_tasks
+            
+        max_idx = max(0, len(filtered_data) - 1)
+        example_idx = st.sidebar.number_input("Task Index", min_value=0, max_value=max_idx, value=0)
+        
+        if filtered_data:
+            selected_task = filtered_data[example_idx]
+            question = selected_task.get("prompt", "")
+            constraints = selected_task.get("constraints", {})
+            task_type = selected_task.get("type", "")
+            
+            with st.sidebar.expander("Preview Task"):
+                st.markdown(f"**Type:** {task_type}")
+                st.markdown(f"**Prompt:** {question}")
+                st.json(constraints)
+                
+            if st.sidebar.button("Load Task"):
+                st.session_state['user_input_area'] = question
+                st.session_state['current_constraints'] = constraints
+                st.session_state['current_task_type'] = task_type
+                st.rerun()
+    else:
+        st.sidebar.error(f"IFEval task set not found at {ifeval_path}")
+
+elif selected_dataset_name != "None":
     dataset_path = dataset_config[selected_dataset_name]
     try:
         # Load dataset from disk
@@ -257,6 +296,23 @@ if 'model' in st.session_state:
     if 'trace' in st.session_state:
         trace = st.session_state['trace']
         analysis = st.session_state['analysis']
+
+        # --- Checker Integration ---
+        if 'current_constraints' in st.session_state and 'current_task_type' in st.session_state:
+            constraints = st.session_state['current_constraints']
+            task_type = st.session_state['current_task_type']
+            full_text = trace.get_full_text()
+            
+            try:
+                checker = get_checker(task_type)
+                passed, error_msg = checker.check(full_text, constraints)
+                
+                if passed:
+                    st.success("✅ Constraint Satisfied!")
+                else:
+                    st.error(f"❌ Constraint Violated: {error_msg}")
+            except Exception as e:
+                st.warning(f"Could not run checker: {e}")
 
         st.header("Token Trace")
         
