@@ -24,5 +24,6 @@ dataset/hh_rlhf/
 dataset/truthful_qa/
 dataset/stsb/
 dataset/hydrology_qa
+dataset/prompts/
 outputs/
 *.github/

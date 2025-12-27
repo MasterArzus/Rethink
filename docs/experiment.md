@@ -38,9 +38,20 @@ We simulate a user trying to fix a model's constraint violation.
     *   **Script:** `experiments/ifeval/run_rethink_simulation.py`
 
 ### 📉 Metrics
-1.  **Constraint Satisfaction Rate (CSR):** % of tasks successfully completed within $N$ turns.
-2.  **Token Saving Rate (TSR):** $1 - \frac{\text{Tokens}_{\text{Rethink}}}{\text{Tokens}_{\text{Reflexion}}}$. (Higher is better; we expect Rethink to save tokens by avoiding full regenerations).
-3.  **Turns-to-Success:** Average number of correction rounds.
+We focus on three key dimensions to evaluate the "Glass-box" advantage:
+
+1.  **Effectiveness & Efficiency:**
+    *   **Constraint Satisfaction Rate (CSR):** % of tasks successfully completed within $N$ turns.
+    *   **Token Saving Rate (TSR):** $1 - \frac{\text{Tokens}_{\text{Rethink}}}{\text{Tokens}_{\text{Reflexion}}}$. Measures computational efficiency.
+    *   **Effective Token Ratio (ETR):** $\frac{\text{Length of Final Correct Answer}}{\text{Total Token Consumption}}$. Measures generation quality per cost.
+
+2.  **Interaction Process:**
+    *   **Turns-to-Success (TTS):** Average number of correction rounds (Prompts vs. Actions).
+    *   **Intervention Position:** Relative position of the first error (Early vs. Late).
+
+3.  **Error Dynamics:**
+    *   **Error Persistence (Stubbornness):** How many times the *same* error repeats despite feedback. Tests if Rethink breaks "sycophancy loops."
+    *   **New Error Introduction Rate:** Probability of introducing new errors during correction.
 
 ---
 

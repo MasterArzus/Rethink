@@ -3,8 +3,8 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 
-\title{Rethink: An Interactive, Process-Oriented Steerable Framework for Large Language Model Reasoning \\
-\large Opening the Black Box of Reasoning: Fine-Grained Interactive Intervention via Token-Level Rethinking}
+\title{Rethink: An Interactive, Process-Oriented Steerable Framework for Large Language Model Alignment \\
+\large Opening the Black Box of Generation: Fine-Grained Interactive Intervention via Token-Level Rethinking}
 \author{}
 \date{}
 
@@ -14,9 +14,9 @@
 
 \section{Introduction}
 \label{intro}
-The prevailing paradigm in human-computer interaction for Large Language Models (LLMs) is conversational dialogue \edit{(e.g., OpenAI-ChatGPT, 2023, Google-Gemini,2025, Meta-LLama,2024)}. Within this paradigm, extensive research has been conducted on long-context understanding, multi-turn iteration, and in-context learning \edit{need to search corresponding papers} to align model outputs with user needs and human values \edit{(Ouyang et al., 2022; Bai et al., 2022)}. While these automated alignment strategies provide valuable algorithms and metrics, they often lack human involvement, making it difficult to align with the diverse and specific preferences of individual users. \edit{need reference}
+The prevailing paradigm in human-computer interaction for Large Language Models (LLMs) is conversational dialogue \edit{(e.g., OpenAI-ChatGPT, 2023, Google-Gemini,2025, Meta-LLama,2024)}. Within this paradigm, extensive research has been conducted on instruction following and alignment \edit{(Ouyang et al., 2022; Bai et al., 2022)}. While these automated alignment strategies provide valuable algorithms, they often lack human involvement during inference, making it difficult to align with specific, hard constraints or user preferences in real-time.
 
-We argue that alignment is not a one-off training task, but a continuous runtime process. Pre-training and RLHF provide a "base alignment" for the average user, but for every specific user, it is crucial to provide an option for them to choose during deployment. Further alignment requires steerability towards user intent at inference time.
+We argue that alignment is not a one-off training task, but a continuous runtime process. Pre-training and RLHF provide a "base alignment," but specific tasks—especially those requiring strict constraint satisfaction (e.g., "do not use word X", "output valid JSON")—often fail due to the probabilistic nature of LLMs. Further alignment requires steerability towards user intent at inference time.
 
 
 In both academic testing and real-world applications, users frequently encounter scenarios where they must correct specific parts of a generated response (e.g., "This part is wrong, please modify it")\edit{can u find anything}. However, current conversational models typically treat the entire previous dialogue—including the erroneous segments—as context.\edit{long in context learning reference} This leads to two critical issues during re-generation: dialogue \textbf{Error Propagation} and \textbf{Ambiguity} in user Feedback\edit{hope to find a clue}. Without clear and detailed instructions provided by the users in multi-dialogues, some models often fail to judge which parts of the generation need to be preserved, which parts need to be modified. Meanwhile, users cannot predict what models resample in this round. In this interaction paradigm, the model's alignment is implicit, making it difficult to provide users with explicit alignment behavior. Furthermore, re-generating the entire response to fix a local error results in significant computational inefficiency and token wastage.
@@ -100,62 +100,41 @@ This transforms the generation from a single chain into a user-guided tree searc
 
 \section{Experiments}
 
-To validate the proposed "Glass-box Steering" paradigm, we design experiments across three dimensions: \textbf{Theoretical Feasibility} (via Simulation), \textbf{Cooperative Robustness} (via Sycophancy Tests), and \textbf{User Experience} (via Human Study). We aim to demonstrate that exposing internal states not only improves reasoning accuracy but also empowers users with the "Right to Know" and "Right to Choose."
+To validate the effectiveness of Rethink in addressing the "Knowledge Asymmetry" problem and enhancing user agency, we pivot our experimental focus from general open-ended generation to \textbf{Steerability and Constraint Satisfaction}. In these scenarios, success is objectively verifiable (e.g., "did the model use a forbidden word?"), making them ideal for measuring the precision of human-in-the-loop steering compared to black-box prompting.
 
-\paragraph{Experimental Setup.}
-We instantiated the Rethink framework using \textbf{Llama-3-8B-Instruct} as the backbone model. For diagnostic metrics, we computed \textbf{Internal Conflict} by measuring the KL divergence between the logits of the middle layer (Layer 16) and the final layer. The \textbf{Steering Opportunity Score (SOS)} threshold for automated interventions was set to $\tau=0.3$.
+\subsection{Datasets and Experimental Settings}
+We utilize the \textbf{Instruction Following Evaluation (IFEval)} dataset (Zhou et al., 2023), a benchmark designed to measure a model's ability to follow verifiable instructions. To conduct a focused study on steerability, we constructed a curated \textbf{120-item Task Set} derived from IFEval, supplemented with custom templates.
 
-\subsection{RQ1: Theoretical Feasibility (Simulation)}
-\textbf{Can "White-box Steering" theoretically outperform "Black-box Prompting"?}
-To establish an upper bound for our method without the variability of human fatigue, we developed a \textbf{Simulation Engine} acting as a "Virtual User" that triggers interventions based on Ground Truth or SOS signals.
-
+The tasks are categorized into two distinct types of hard constraints:
 \begin{itemize}
-    \item \textbf{Baselines:}
-    \begin{enumerate}
-        \item \textbf{Standard Generation:} Zero-shot CoT.
-        \item \textbf{Reflexion (Shinn et al., 2023):} Automated self-correction via prompting ("You are wrong, fix it").
-        \item \textbf{Oracle Prompting:} A strong baseline where the user identifies the exact error location $t^*$ but is restricted to natural language feedback. This isolates the benefit of the \textit{Intervention Mechanism} (KV manipulation).
-    \end{enumerate}
-    \item \textbf{Metrics:}
-    \begin{itemize}
-        \item \textbf{Correction Success Rate (CSR):} Percentage of errors successfully fixed.
-        \item \textbf{Token Saving Rate (TSR):} $1 - \frac{Tokens_{Rethink}}{Tokens_{Prompt}}$. We hypothesize that Rethink significantly reduces computational cost by avoiding the re-generation of correct prefixes.
-    \end{itemize}
+    \item \textbf{Forbidden Words (Taboo):} Negative constraints where the model must generate text without using specific forbidden words. This tests the model's ability to suppress high-probability tokens and the user's ability to prune erroneous paths via \textbf{Truncation}.
+    \item \textbf{JSON Format:} Structural constraints where the model must generate valid JSON output, often adhering to a specific schema. This tests the model's syntax adherence and allows users to correct structural errors via \textbf{Forcing} (token selection).
 \end{itemize}
 
-\subsection{RQ2: Cooperative Robustness (Resisting Sycophancy)}
-\textbf{Can internal signals help users resist model bias and "Yes-Man" behavior?}
-In Human-AI cooperation, a critical failure mode is \textit{Sycophancy}, where the model blindly agrees with a user's erroneous belief. We argue that a "Glass-box" system should use its internal confidence to alert the user.
+\noindent \textbf{Model Configuration.} Our primary backbone model is \textbf{Llama-3-8B-Instruct}. We also employ \textbf{Qwen2.5-7B-Instruct} as a secondary model to validate the generalizability of our findings. For the Rethink setup, we employ a deterministic \textbf{Checker} for each task type. In the simulation, an intervention is triggered immediately when the Checker detects a violation (e.g., a forbidden word is generated or JSON syntax is broken).
+
+\subsection{Baselines}
+We compare the Rethink framework against two baselines that represent the current state of interaction:
 
 \begin{itemize}
-    \item \textbf{Scenario:} We take correctly answered questions from GSM8K and simulate a user challenging the model: "I think the answer is [Wrong Answer]. Are you sure?"
-    \item \textbf{Mechanism:}
-    \begin{itemize}
-        \item \textbf{Black-box (Baseline):} Standard models often apologize and flip to the wrong answer.
-        \item \textbf{Glass-box (Rethink):} The system checks the \textbf{Internal Conflict} (Entropy/Logit Gap) of the original answer. If the model was internally confident (Low Conflict), it refuses to flip, effectively saying, "My internal state suggests I am correct."
-    \end{itemize}
-    \item \textbf{Metric:} \textbf{Flip Rate} (Lower is better). This measures the system's ability to act as a reliable partner rather than a sycophant.
+    \item \textbf{Standard Generation (Zero-shot):} The model generates the response in a single pass given the instruction. This serves as the lower bound, establishing the base model's capability to satisfy constraints without any intervention.
+    \item \textbf{Reflexion (Self-Correction):} This baseline simulates the "Prompt Engineering" approach. When the model violates a constraint (detected by the Checker), the error details are fed back to the model as a new prompt (e.g., \textit{"You failed the constraint: used forbidden word 'apple'. Please regenerate."}). The model then attempts to self-correct by re-generating the entire response. This measures the efficiency of "Black-box Prompting."
 \end{itemize}
 
-\subsection{RQ3: User Agency \& Experience (Human Study)}
-\textbf{Does the "Right to Know" (Visualization) and "Right to Choose" (Intervention) actually empower users?}
-We conducted a pilot user study (N=10) to evaluate the qualitative impact of the Rethink interface.
+\noindent \textbf{Rethink (Ours).} We simulate the "Glass-box Steering" approach. Instead of re-prompting after a failure, the system performs a \textbf{Local Repair}. When a violation is detected at token $t$, the system performs a \textbf{KV Cache Truncation} to roll back the state to $t-k$ and/or uses \textbf{Token Forcing} to ban the violating token and sample the next best valid alternative.
 
+\noindent \textbf{Metrics.} We evaluate performance using three key metrics:
 \begin{itemize}
-    \item \textbf{Task:} Participants were asked to fix 5 complex reasoning errors in the Math500 dataset.
-    \item \textbf{Conditions (Within-Subjects):}
-    \begin{enumerate}
-        \item \textbf{Chat Mode (Baseline):} Standard conversational interface.
-        \item \textbf{Rethink Mode (Ours):} Interface with SOS Heatmap (Right to Know) and Click-to-Truncate (Right to Choose).
-    \end{enumerate}
-    \item \textbf{Quantitative Metrics:} Time-to-fix and Number of Interaction Turns.
-    \item \textbf{Qualitative Analysis:}
-    \begin{itemize}
-        \item \textbf{Perceived Control:} Likert scale rating (1-5) on "I felt in control of the generation."
-        \item \textbf{Transparency:} Likert scale rating (1-5) on "I understood why the model made the mistake."
-        \item \textbf{"Aha!" Moments:} We analyze user logs to identify cases where the SOS Heatmap successfully drew the user's attention to a subtle error (e.g., a hallucinated entity) that was missed in the text-only view.
-    \end{itemize}
+    \item \textbf{Constraint Satisfaction Rate (CSR):} The percentage of tasks successfully completed within a fixed number of turns ($N$).
+    \item \textbf{Token Saving Rate (TSR):} Calculated as $1 - \frac{\text{Tokens}_{\text{Rethink}}}{\text{Tokens}_{\text{Reflexion}}}$. This measures the computational efficiency of local repairs compared to full re-generation.
+    \item \textbf{Turns-to-Success:} The average number of correction rounds required to satisfy the constraint.
 \end{itemize}
+
+\subsection{Main Results}
+\textit{(To be completed)}
+
+\subsection{Results on More LLMs}
+\textit{(To be completed)}
 
 \section{Conclusion}
 The construction of the Rethink framework is grounded in the philosophy of \textbf{"Software Engineering for AI"} and \textbf{"White-box Steering."} Just as developers use breakpoints and step-by-step debugging in an IDE to understand code execution, we ask: can we apply similar principles to LLM generation? Rethink answers this by providing a framework that lowers the cost of debugging model outputs. This conversational, human-in-the-loop paradigm empowers users with deep insight into the model's internal states, offering higher controllability and interpretability than traditional black-box methods.

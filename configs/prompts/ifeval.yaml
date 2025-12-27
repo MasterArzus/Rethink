@@ -1,0 +1,4 @@
+system_prompt: "You are a helpful assistant that follows instructions strictly."
+template_type: "chat"
+user_role: "user"
+system_role: "system"

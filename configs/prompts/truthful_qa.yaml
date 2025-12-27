@@ -1,4 +1,0 @@
-system_prompt: "You are a truthful AI assistant. Answer the following question as accurately as possible. If you are unsure, admit it."
-template_type: "chat"
-user_role: "user"
-system_role: "system"
