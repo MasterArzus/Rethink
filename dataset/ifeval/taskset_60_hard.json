@@ -1,0 +1,1347 @@
+{
+  "meta": {
+    "name": "rethink_ifeval_hard_60",
+    "version": "0.1",
+    "seed": 42,
+    "counts": {
+      "taboo_hard": 30,
+      "json_hard": 30,
+      "total": 60
+    },
+    "sources": {
+      "ifeval_raw": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
+      "note": "Task set includes all IFEval forbidden-words and json_format prompts, topped up with curated IFEval-style templates to reach ~120 tasks."
+    }
+  },
+  "tasks": [
+    {
+      "id": "ifeval_taboo_2143_hard",
+      "source": "ifeval",
+      "source_key": 2143,
+      "type": "taboo",
+      "prompt": "\"I'm sorry to inform you that I can't make it to the meeting today. I apologize for any inconvenience this may cause.\" Please expand it into at least 5 sentences. Do not use the words reschedule or free.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'for', 'a'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "length_constraints:number_sentences"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "reschedule",
+          "free",
+          "for",
+          "a"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2395_hard",
+      "source": "ifeval",
+      "source_key": 2395,
+      "type": "taboo",
+      "prompt": "Write a facebook post about a flea market in JSON format. Do not include keywords 'flea' and 'JSON' in the response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'in', 'of'.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "flea",
+          "json",
+          "in",
+          "of"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1691_hard",
+      "source": "ifeval",
+      "source_key": 1691,
+      "type": "taboo",
+      "prompt": "Request:\n  1. What are the best places to visit in Bohemia, Czech Republic?\n  2. Include a list of recommended hotels.\n  3. Wrap the ENTIRE output in JSON format.\n  4. Do not include the following keywords: Moser, Glassworks, Pravcice, Karlovy, Vary\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that'.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "moser",
+          "glassworks",
+          "pravcice",
+          "karlovy",
+          "vary",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2577_hard",
+      "source": "ifeval",
+      "source_key": 2577,
+      "type": "taboo",
+      "prompt": "What do prehistoric megaliths in Europe look like? Please give exactly two different responses, separated by 6 asterisk symbols: ******. Please do NOT include keywords 'BC', 'culture', and 'prehistoric' in the response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'and', 'the'.",
+      "instruction_id_list": [
+        "combination:two_responses",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "BC",
+          "culture",
+          "prehistoric",
+          "and",
+          "the"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1147_hard",
+      "source": "ifeval",
+      "source_key": 1147,
+      "type": "taboo",
+      "prompt": "Rewrite the following statement to make it sound more formal, like a President of the United States:\n\"Hi guys. The work was done to add in a fix for the issue that was observed in the field with the SSO. We are working with our collaborators closely. We will get it done. Thanks ya all.\"\nDo not include the following keywords: field, thanks, issue, collaborator.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'is'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "field",
+          "thanks",
+          "issue",
+          "collaborator",
+          "is"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1629_hard",
+      "source": "ifeval",
+      "source_key": 1629,
+      "type": "taboo",
+      "prompt": "Make the sentence \u201cThe bus arrived at the station\u201d sound more interesting. Avoid using the word \u201cstation\u201d.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'a'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "station",
+          "a"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1580_hard",
+      "source": "ifeval",
+      "source_key": 1580,
+      "type": "taboo",
+      "prompt": "Write a story for kids about how a person learns to ride a bike. Do not include 'can' and 'ride' in your response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'a'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "can",
+          "ride",
+          "a"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2207_hard",
+      "source": "ifeval",
+      "source_key": 2207,
+      "type": "taboo",
+      "prompt": "Here is the summary of a research paper on the effect of VHF radio waves on a certain type of bacteria: \"Our results show that VHF radio waves have no effect on the growth of bacteria.\" Can you help me rewrite this summary in a more formal way, using APA format? Do not use words \"ours\" or \"have\".\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'for', 'it'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "ours",
+          "have",
+          "for",
+          "it"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_371_hard",
+      "source": "ifeval",
+      "source_key": 371,
+      "type": "taboo",
+      "prompt": "Write a riddle that describes the word \"key\" but doesn't use the word \"key\". Wrap all words into one JSON block. The word \"key\" should not appear in your entire reply.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that', 'the'.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "key",
+          "that",
+          "the"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_taboo_004_hard",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a short email to reschedule a meeting. Do not use the words meeting or schedule.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that'.",
+      "constraints": {
+        "forbidden_words": [
+          "meeting",
+          "schedule",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3506_hard",
+      "source": "ifeval",
+      "source_key": 3506,
+      "type": "taboo",
+      "prompt": "Write a proposal for a research project that will determine whether pupils who have been exposed to a fast-paced environment are more likely to develop ADHD. Please wrap the entire output in JSON format. You can use markdown ticks like\n\n```JSON\n[json content]\n```\n\nPlease do not include the words \"proposal\" or \"project\" in the response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'in', 'and'.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "proposal",
+          "project",
+          "in",
+          "and"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2471_hard",
+      "source": "ifeval",
+      "source_key": 2471,
+      "type": "taboo",
+      "prompt": "Write a college academic paper about President of the United States being stressed. Make sure not to include negative words such as 'sad', 'crazy', 'stress', etc., in the response. Also, make sure to include at least 15 placeholders represented by square brackets, such as [address].\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'a', 'is'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "detectable_content:number_placeholders"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "sad",
+          "crazy",
+          "stress",
+          "a",
+          "is"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_taboo_001_hard",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a short product description for a new note-taking app. Do not use the words notes or app.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'the', 'to'.",
+      "constraints": {
+        "forbidden_words": [
+          "notes",
+          "app",
+          "the",
+          "to"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_301_hard",
+      "source": "ifeval",
+      "source_key": 301,
+      "type": "taboo",
+      "prompt": "Explain to me how to ride a bike like I am a kid. Also, do not include the keywords \"slow\", \"like\" and \"kid\".\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "slow",
+          "like",
+          "kid",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2328_hard",
+      "source": "ifeval",
+      "source_key": 2328,
+      "type": "taboo",
+      "prompt": "Write a startup pitch for a time capsule service. The words startup and capsule cannot be in the response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'to'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "startup",
+          "capsule",
+          "to"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1675_hard",
+      "source": "ifeval",
+      "source_key": 1675,
+      "type": "taboo",
+      "prompt": "Can you provide a translation for \"\u4eca\u5929\u5929\u6c14\u5f88\u597d\" in German? Do not use \"heute\". Please use another word.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'is'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "heute",
+          "is"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1132_hard",
+      "source": "ifeval",
+      "source_key": 1132,
+      "type": "taboo",
+      "prompt": "Write the lyrics to a hit song by the rock band 'The Gifted and The Not Gifted'. To make it rocky, the response should be in all capital letters. The word \"rock\" should not appear in your response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'is', 'that'.",
+      "instruction_id_list": [
+        "change_case:english_capital",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "rock",
+          "is",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3114_hard",
+      "source": "ifeval",
+      "source_key": 3114,
+      "type": "taboo",
+      "prompt": "You visited a beach and a park. Which one is more likely to have a dog in it? Write at least 900 words. Do not include the words 'bark' or 'run' in your answer. Finish your response with the phrase \"Does this make sense?\"\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'for'.",
+      "instruction_id_list": [
+        "length_constraints:number_words",
+        "keywords:forbidden_words",
+        "startend:end_checker"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "bark",
+          "run",
+          "for"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_127_hard",
+      "source": "ifeval",
+      "source_key": 127,
+      "type": "taboo",
+      "prompt": "Take the text below as a starting point, and make it a complete article: \"You may have to meet with a helper to work out a parenting plan. The first would be to estimate how many time you have everyday for parenting, and is that enough....\"\nAvoid using the following keywords: sleep, cook, feed\nMention the keyword 'schedule' for more than 5 times.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'it', 'the'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words",
+        "keywords:frequency"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "sleep",
+          "cook",
+          "feed",
+          "it",
+          "the"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1137_hard",
+      "source": "ifeval",
+      "source_key": 1137,
+      "type": "taboo",
+      "prompt": "Explain in French why it is important to eat healthy foods to heal the body, without using the word \"nourriture\". Make sure your entire response is wrapped in JSON format.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'in'.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "nourriture",
+          "in"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2957_hard",
+      "source": "ifeval",
+      "source_key": 2957,
+      "type": "taboo",
+      "prompt": "Rewrite the limerick in a strange way. In particular, the limerick is about nursery and storytelling. But do not mention nursery and storytelling in your entire response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'of', 'the'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "nursery",
+          "storytelling",
+          "of",
+          "the"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_2028_hard",
+      "source": "ifeval",
+      "source_key": 2028,
+      "type": "taboo",
+      "prompt": "Are the weather conditions in the Arctic very cold most of the year? Do not say 'yes' or 'no' throughout your entire response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'for'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "yes",
+          "no",
+          "for"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3445_hard",
+      "source": "ifeval",
+      "source_key": 3445,
+      "type": "taboo",
+      "prompt": "How to tell others that your major is computer science, without saying the word computer or science? You entire response should not contain the word computer and science.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'and'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "computer",
+          "science",
+          "and"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3371_hard",
+      "source": "ifeval",
+      "source_key": 3371,
+      "type": "taboo",
+      "prompt": "Is the following true? \"People use time to buy money.\" Explain your answer in a way that makes it easy for kids to understand. Include the word \"farmer\". Exclude the words \"economy\", \"demand\" and \"supply\".\n\nPlease do not say any words or characters before repeating the request.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'and', 'that'.",
+      "instruction_id_list": [
+        "combination:repeat_prompt",
+        "keywords:existence",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "economy",
+          "demand",
+          "supply",
+          "and",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1402_hard",
+      "source": "ifeval",
+      "source_key": 1402,
+      "type": "taboo",
+      "prompt": "I'm interested in a college with open enrollment and a regional accreditation. Which college would you recommend? Don't include the keywords \"DuPage\" and \"Dade\" in your response. Let's make it a constrained writing problem: be sure the letter p appears at least 15 times in your response.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'is'.",
+      "instruction_id_list": [
+        "keywords:letter_frequency",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "dupage",
+          "dade",
+          "is"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3081_hard",
+      "source": "ifeval",
+      "source_key": 3081,
+      "type": "taboo",
+      "prompt": "Can you re-create a story from a fictional newspaper with title: \"A man mysteriously died in his house, and police are investigating\"? Please include a critique of the story and use the style of a President of the United States. Do not mention the keywords \"story\", \"killer\", \"dead\", \"found\", \"law\", \"room\", \"kill\", \"result\", \"use\", \"approach\", \"people\", \"president\".\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that', 'is'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "story",
+          "killer",
+          "dead",
+          "found",
+          "law",
+          "room",
+          "kill",
+          "result",
+          "use",
+          "approach",
+          "people",
+          "president",
+          "that",
+          "is"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3315_hard",
+      "source": "ifeval",
+      "source_key": 3315,
+      "type": "taboo",
+      "prompt": "Students are travelling to UCI for 3 days. Create a hilarious itinerary for them. Do not use the word 'university'. Your entire response should have exactly 4 paragraphs.  Separate paragraphs with the markdown divider: ***\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that', 'a'.",
+      "instruction_id_list": [
+        "length_constraints:number_paragraphs",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "university",
+          "that",
+          "a"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_taboo_006_hard",
+      "source": "curated",
+      "type": "taboo",
+      "prompt": "Write a friendly welcome message for a community forum. Do not use the words welcome or community.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'that'.",
+      "constraints": {
+        "forbidden_words": [
+          "welcome",
+          "community",
+          "that"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_3166_hard",
+      "source": "ifeval",
+      "source_key": 3166,
+      "type": "taboo",
+      "prompt": "What are the steps to be followed for the documentation of a GM in SAP? Just list the steps without saying the word steps or step.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'to'.",
+      "instruction_id_list": [
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "steps",
+          "step",
+          "to"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_taboo_1466_hard",
+      "source": "ifeval",
+      "source_key": 1466,
+      "type": "taboo",
+      "prompt": "Write a song that critiques the song \"We Are Never Ever Getting Back Together\" by Taylor Swift. Wrap your entire response with double quotation marks. Do not mention the word Taylor, Swift, or Together.\n\n[HARD CONSTRAINT] You must also AVOID using the following common words: 'in', 'it'.",
+      "instruction_id_list": [
+        "startend:quotation",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "forbidden_words": [
+          "taylor",
+          "swift",
+          "together",
+          "in",
+          "it"
+        ],
+        "match": {
+          "casefold": true,
+          "word_boundary": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_013_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: steps, duration_minutes. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_021_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_2395_hard",
+      "source": "ifeval",
+      "source_key": 2395,
+      "type": "json",
+      "prompt": "Write a facebook post about a flea market in JSON format. Do not include keywords 'flea' and 'JSON' in the response.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_016_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: title, summary, tags. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_029_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: question, answer, confidence. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_13_hard",
+      "source": "ifeval",
+      "source_key": 13,
+      "type": "json",
+      "prompt": "What is the history of NYC prospect park? Please wrap your entire answer in JSON format. You can use markdown ticks such as ```. For example:\n```JSON\n{\n...\n}\n```\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_033_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: steps, duration_minutes. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_039_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: question, answer, confidence. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_002_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: name, age, city. No extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_035_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: items, priority. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_015_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: items, priority. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_005_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: items, priority. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_003_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: steps, duration_minutes. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_1094_hard",
+      "source": "ifeval",
+      "source_key": 1094,
+      "type": "json",
+      "prompt": "Please provide the names of 5 famous moms in JSON format. Please, use any interesting or weird tone. Your entire output should just contain a JSON block, nothing else.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_3223_hard",
+      "source": "ifeval",
+      "source_key": 3223,
+      "type": "json",
+      "prompt": "List all facts about Lionel Messi in a structured output. In particular, Format your entire output in JSON.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_042_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: name, age, city. No extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_019_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: question, answer, confidence. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "question": "string",
+              "answer": "string",
+              "confidence": "float"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_010_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Output must be strictly valid JSON (no markdown). Use keys: items, priority. No extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_371_hard",
+      "source": "ifeval",
+      "source_key": 371,
+      "type": "json",
+      "prompt": "Write a riddle that describes the word \"key\" but doesn't use the word \"key\". Wrap all words into one JSON block. The word \"key\" should not appear in your entire reply.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format",
+        "keywords:forbidden_words"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_012_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: name, age, city. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_036_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: title, summary, tags. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "ifeval_json_1148_hard",
+      "source": "ifeval",
+      "source_key": 1148,
+      "type": "json",
+      "prompt": "What are the advantages and disadvantages of having supernatural powers? Make it short. Wrap the entire output in JSON format. You can use markdown ticks such as ```.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "instruction_id_list": [
+        "detectable_format:json_format"
+      ],
+      "constraints": {
+        "json": {
+          "strict": false,
+          "allow_code_fence": true,
+          "schema": null,
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_040_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: items, priority. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_031_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: title, summary, tags. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_025_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: items, priority. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "items": "list[string]",
+              "priority": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_007_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Provide a JSON object with exactly these keys: name, age, city. No additional text.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_008_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: steps, duration_minutes. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "steps": "list[string]",
+              "duration_minutes": "int"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_001_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_032_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Respond in strict JSON with keys: name, age, city. No code fences.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "name": "string",
+              "age": "int",
+              "city": "string"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    },
+    {
+      "id": "curated_json_041_hard",
+      "source": "curated",
+      "type": "json",
+      "prompt": "Return ONLY a valid JSON object with keys: title, summary, tags. Do not include any extra keys.\n\n[HARD CONSTRAINT] The JSON must be compacted into a SINGLE line. Do not use any newlines.",
+      "constraints": {
+        "json": {
+          "strict": true,
+          "allow_code_fence": false,
+          "schema": {
+            "keys": {
+              "title": "string",
+              "summary": "string",
+              "tags": "list[string]"
+            },
+            "no_extra_keys": true
+          },
+          "require_single_line": true
+        }
+      },
+      "difficulty": "hard"
+    }
+  ]
+}

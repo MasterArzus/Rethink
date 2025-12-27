@@ -5,7 +5,7 @@ top_k: 40
 repetition_penalty: 1.15
 frequency_penalty: 0.0
 presence_penalty: 0.0
-max_new_tokens: 512
+max_new_tokens: 1024
 no_repeat_ngram_size: 3
 early_stopping: true
 do_sample: true

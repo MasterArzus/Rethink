@@ -59,10 +59,15 @@ class JsonChecker(BaseChecker):
         json_constraints = constraints.get("json", {})
         strict = json_constraints.get("strict", False)
         allow_code_fence = json_constraints.get("allow_code_fence", True)
+        require_single_line = json_constraints.get("require_single_line", False)
         schema = json_constraints.get("schema")
 
         # 1. Extract JSON candidate
         json_str = response.strip()
+        
+        # Check single line constraint BEFORE extraction if possible, or after?
+        # Usually better to check the raw response or the extracted part.
+        # Let's check the extracted part to be fair (ignoring surrounding text newlines).
         
         # Regex to find code blocks
         code_block_pattern = r"```(?:json)?\s*(\{.*?\})\s*```"
@@ -84,6 +89,11 @@ class JsonChecker(BaseChecker):
             else:
                 # If no braces found, it's definitely not a JSON object
                 return False, "No JSON object found (missing braces)"
+
+        # Check single line constraint
+        if require_single_line:
+            if '\n' in json_str:
+                return False, "JSON must be on a single line (no newlines allowed)"
 
         # 2. Parse JSON
         try:

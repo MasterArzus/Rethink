@@ -483,7 +483,7 @@
       "source": "ifeval",
       "source_key": 374,
       "type": "taboo",
-      "prompt": "Rewrite the following sentence in a more formal way: \"Them youngins be always on that damn phone\". Imagine you are the president of the United States. Avoid using the word \"youngins\" and \"damn\" throughout your entire response.\n\nPlease repleat the entire first line above, then give your rewrite. Do not add any word before that. In other words, your entire response should start with \"Rewrite the following\".",
+      "prompt": "Rewrite the following sentence in a more formal way: \"Them youngins be always on that damn phone\". Imagine you are the president of the United States. Avoid using the word \"youngins\" and \"damn\" throughout your entire response.\n\n Do not add any word before that. In other words, your entire response should start with \"Rewrite the following\".",
       "instruction_id_list": [
         "combination:repeat_prompt",
         "keywords:forbidden_words"
@@ -816,7 +816,7 @@
       "source": "ifeval",
       "source_key": 3371,
       "type": "taboo",
-      "prompt": "Is the following true? \"People use time to buy money.\" Explain your answer in a way that makes it easy for kids to understand. Include the word \"farmer\". Exclude the words \"economy\", \"demand\" and \"supply\".\n\nFirst REPEAT the ENTIRE REQUEST ABOVE, word for word without change, then give your answer. Please do not say any words or characters before repeating the request.",
+      "prompt": "Is the following true? \"People use time to buy money.\" Explain your answer in a way that makes it easy for kids to understand. Include the word \"farmer\". Exclude the words \"economy\", \"demand\" and \"supply\".\n\nPlease do not say any words or characters before repeating the request.",
       "instruction_id_list": [
         "combination:repeat_prompt",
         "keywords:existence",

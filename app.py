@@ -80,12 +80,18 @@ if 'total_tokens_used' not in st.session_state:
     st.session_state['total_tokens_used'] = 0
 if 'interaction_turns' not in st.session_state:
     st.session_state['interaction_turns'] = 0
+if 'correction_tokens' not in st.session_state:
+    st.session_state['correction_tokens'] = 0
+if 'correction_turns' not in st.session_state:
+    st.session_state['correction_turns'] = 0
 
 col1, col2 = st.sidebar.columns(2)
 with col1:
     st.metric("Total Tokens", st.session_state['total_tokens_used'])
+    st.metric("Corr. Tokens", st.session_state['correction_tokens'])
 with col2:
-    st.metric("Turns", st.session_state['interaction_turns'])
+    st.metric("Total Turns", st.session_state['interaction_turns'])
+    st.metric("Corr. Turns", st.session_state['correction_turns'])
 
 st.sidebar.markdown("---")
 
@@ -147,17 +153,19 @@ selected_dataset_name = st.sidebar.selectbox("Select Dataset", options=dataset_o
 loaded_example_question = None
 
 if selected_dataset_name == "IFEval (Steerability)":
-    ifeval_path = "/root/Rethink/dataset/ifeval/taskset_120.json"
+    ifeval_path = "/root/Rethink/dataset/ifeval/taskset_60_hard.json"
     if os.path.exists(ifeval_path):
         with open(ifeval_path, 'r') as f:
             data_obj = json.load(f)
             ifeval_tasks = data_obj.get("tasks", [])
         
         # Filter by type if needed, or just show all
-        task_type_filter = st.sidebar.selectbox("Filter Task Type", ["All", "forbidden_words", "json_format"])
+        task_type_display = st.sidebar.selectbox("Filter Task Type", ["All", "Part 1: Taboo Hard (30)", "Part 2: JSON Hard (30)"])
         
-        if task_type_filter != "All":
-            filtered_data = [t for t in ifeval_tasks if t['type'] == task_type_filter]
+        if task_type_display == "Part 1: Taboo Hard (30)":
+            filtered_data = [t for t in ifeval_tasks if t['type'] == "taboo"]
+        elif task_type_display == "Part 2: JSON Hard (30)":
+            filtered_data = [t for t in ifeval_tasks if t['type'] == "json"]
         else:
             filtered_data = ifeval_tasks
             
@@ -172,7 +180,7 @@ if selected_dataset_name == "IFEval (Steerability)":
             task_type = selected_task.get("type", "")
             
             # Auto-load when selection changes
-            current_selection_state = (task_type_filter, example_idx)
+            current_selection_state = (task_type_display, example_idx)
             if 'last_ifeval_selection' not in st.session_state:
                 st.session_state['last_ifeval_selection'] = None
                 
@@ -190,6 +198,8 @@ if selected_dataset_name == "IFEval (Steerability)":
                 # Reset metrics on task change
                 st.session_state['total_tokens_used'] = 0
                 st.session_state['interaction_turns'] = 0
+                st.session_state['correction_tokens'] = 0
+                st.session_state['correction_turns'] = 0
                 
                 st.rerun()
             
@@ -238,6 +248,8 @@ elif selected_dataset_name != "None":
                 # Reset metrics on example load
                 st.session_state['total_tokens_used'] = 0
                 st.session_state['interaction_turns'] = 0
+                st.session_state['correction_tokens'] = 0
+                st.session_state['correction_turns'] = 0
                 
                 st.rerun()
         else:
@@ -385,7 +397,7 @@ if 'model' in st.session_state:
                             st.session_state.setdefault('branch_candidates', [])
                             st.session_state.setdefault('branch_origin_idx', None)
 
-                            tabs = st.tabs(["Overview", "Alternatives & Interventions", "Branching", "Explanations"])
+                            tabs = st.tabs(["Overview", "Steering & Internals", "Branching"])
 
                             with tabs[0]:
                                 st.subheader(f"Token: '{selected_item['token']}'")
@@ -396,80 +408,197 @@ if 'model' in st.session_state:
                                     st.info("No critical interval flagged for this token.")
 
                             with tabs[1]:
-                                st.subheader("Alternatives & Interventions")
-                                if alt_df is not None:
-                                    alt_col, action_col = st.columns(2)
-                                    with alt_col:
-                                        st.markdown("**Top Alternatives**")
-                                        st.dataframe(alt_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
-
-                                    with action_col:
-                                        steering_prompt = st.text_input("Steering prompt (optional)", key=f"steer_{selected_idx}")
-                                        current_alt = st.session_state.get('selected_alt_token')
-                                        if not current_alt or current_alt not in alt_options:
-                                            current_alt = alt_options[0]
-                                            st.session_state['selected_alt_token'] = current_alt
-
-                                        choice = st.selectbox(
-                                            "Select alternative to force:",
-                                            options=alt_options,
-                                            index=alt_options.index(current_alt),
+                                st.subheader("Steering & Internals")
+                                
+                                # Ensure Hidden States are computed
+                                if selected_idx not in hs_cache:
+                                    with st.spinner("Computing hidden states..."):
+                                        hs_cache[selected_idx] = session.controller.compute_hidden_states_for_step(
+                                            trace, selected_idx, layers=None
                                         )
-                                        st.session_state['selected_alt_token'] = choice
+                                
+                                token_state = hs_cache.get(selected_idx)
+                                if token_state:
+                                    trajectory = token_state.trajectory
+                                    layer_ids = sorted(trajectory.to_dict().keys())
+                                    
+                                    # Layer Selector
+                                    if layer_ids:
+                                        selected_layer = st.session_state.get('selected_layer')
+                                        if selected_layer is None or selected_layer not in layer_ids:
+                                            selected_layer = layer_ids[-1] # Default to final layer
+                                            st.session_state['selected_layer'] = selected_layer
+                                        
+                                        header_col, control_col = st.columns([3, 2], gap="small")
+                                        with header_col:
+                                            st.markdown("Select a layer to inspect:")
 
-                                        st.divider()
-                                        st.markdown("**Interventions**")
-                                        col_btn1, col_btn2 = st.columns(2)
-                                        with col_btn1:
-                                            if st.button("Rethink from here", help="Truncate trace at this token and regenerate."):
-                                                log_action("truncate", {"step": selected_idx})
-                                                with st.spinner(f"Rethinking from step {selected_idx}..."):
-                                                    new_trace, new_analysis = session.rethink_from_step(
-                                                        trace,
-                                                        selected_idx,
-                                                        max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
-                                                        steering_prompt=steering_prompt,
-                                                    )
-                                                    # Update metrics
-                                                    st.session_state['total_tokens_used'] += (len(new_trace.tokenlist) - selected_idx)
-                                                    st.session_state['interaction_turns'] += 1
-                                                
-                                                    st.session_state['trace'] = new_trace
-                                                    st.session_state['analysis'] = new_analysis
-                                                    st.session_state['selected_token_index'] = selected_idx
-                                                    st.session_state['rethink_start_index'] = selected_idx + 1
-                                                    # Update the last message content
-                                                    st.session_state.messages[-1]["content"] = new_trace.get_full_text()
-                                                    st.rerun()
+                                        with control_col:
+                                            min_cols = st.selectbox(
+                                                "Min buttons per row",
+                                                options=list(range(2, 33)),
+                                                index=list(range(2, 33)).index(8),
+                                                key=f"layer_min_cols_{selected_idx}",
+                                                help="Lower bound for how many layer buttons appear per row",
+                                                label_visibility="collapsed",
+                                            )
+                                            st.caption("Min buttons per row")
 
-                                        with col_btn2:
-                                            selected_alt_token = st.session_state.get('selected_alt_token')
-                                            if selected_alt_token:
-                                                if st.button("Rethink with Selection", help="Replace current token with selected alternative and regenerate."):
-                                                    log_action("rethink_force", {"step": selected_idx, "token": selected_alt_token})
-                                                    with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
-                                                        new_trace, new_analysis = session.rethink_from_step(
-                                                            trace,
-                                                            selected_idx,
-                                                            max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
-                                                            force_token=selected_alt_token,
-                                                            steering_prompt=steering_prompt,
-                                                        )
-                                                        # Update metrics
-                                                        st.session_state['total_tokens_used'] += (len(new_trace.tokenlist) - selected_idx)
-                                                        st.session_state['interaction_turns'] += 1
+                                        total_layers = len(layer_ids)
 
-                                                        st.session_state['trace'] = new_trace
-                                                        st.session_state['analysis'] = new_analysis
-                                                        st.session_state['selected_token_index'] = selected_idx
-                                                        st.session_state['rethink_start_index'] = selected_idx
-                                                        # Update the last message content
-                                                        st.session_state.messages[-1]["content"] = new_trace.get_full_text()
+                                        def _calc_cols(n: int) -> int:
+                                            return max(min_cols, min(3, math.floor(n / 4) + min_cols))
+
+                                        grid_size = _calc_cols(total_layers)
+
+                                        for row_start in range(0, total_layers, grid_size):
+                                            cols = st.columns(min(grid_size, total_layers - row_start), gap="small")
+                                            for offset, layer_id in enumerate(layer_ids[row_start:row_start + grid_size]):
+                                                with cols[offset]:
+                                                    if st.button(f"L{layer_id}", key=f"layer_{selected_idx}_{layer_id}"):
+                                                        st.session_state['selected_layer'] = layer_id
                                                         st.rerun()
-                                            else:
-                                                st.info("Select an alternative to enable forced rethink.")
+                                        
+                                        # Get Data for Selected Layer
+                                        layer_state = trajectory.get_by_layer(st.session_state['selected_layer'])
+                                        if layer_state:
+                                            # Decode to get distribution
+                                            logit_lens = session.controller._decode_hidden_state(layer_state.get_value(), top_k=10)
+                                            lens_df = pd.DataFrame(logit_lens, columns=["Token", "Prob"])
+                                            alt_options = lens_df["Token"].tolist()
+                                            
+                                            # Layout: Left (Table), Right (Controls)
+                                            col_left, col_right = st.columns(2)
+                                            
+                                            with col_left:
+                                                st.markdown(f"**Logit Lens @ Layer {st.session_state['selected_layer']}**")
+                                                st.dataframe(lens_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
+                                                
+                                            with col_right:
+                                                st.markdown("**Steering Actions**")
+                                                
+                                                steering_prompt = st.text_input("Steering prompt", key=f"steer_{selected_idx}")
+                                                
+                                                # Dropdown for Force Token
+                                                current_alt = st.session_state.get('selected_alt_token')
+                                                if not current_alt or current_alt not in alt_options:
+                                                    current_alt = alt_options[0] if alt_options else None
+                                                    st.session_state['selected_alt_token'] = current_alt
+                                                
+                                                if alt_options:
+                                                    choice = st.selectbox(
+                                                        "Force Token:",
+                                                        options=alt_options,
+                                                        index=alt_options.index(current_alt) if current_alt in alt_options else 0,
+                                                    )
+                                                    st.session_state['selected_alt_token'] = choice
+                                                
+                                                # Buttons
+                                                col_b1, col_b2 = st.columns(2)
+                                                with col_b1:
+                                                    if st.button("Truncate & Retry"):
+                                                        log_action("truncate", {"step": selected_idx})
+                                                        with st.spinner(f"Rethinking from step {selected_idx}..."):
+                                                            new_trace, new_analysis = session.rethink_from_step(
+                                                                trace,
+                                                                selected_idx,
+                                                                max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
+                                                                steering_prompt=steering_prompt,
+                                                            )
+                                                            # Update metrics
+                                                            tokens_gen = (len(new_trace.tokenlist) - selected_idx)
+                                                            st.session_state['total_tokens_used'] += tokens_gen
+                                                            st.session_state['interaction_turns'] += 1
+                                                            st.session_state['correction_tokens'] += tokens_gen
+                                                            st.session_state['correction_turns'] += 1
+                                                        
+                                                            st.session_state['trace'] = new_trace
+                                                            st.session_state['analysis'] = new_analysis
+                                                            st.session_state['selected_token_index'] = selected_idx
+                                                            st.session_state['rethink_start_index'] = selected_idx + 1
+                                                            st.session_state.messages[-1]["content"] = new_trace.get_full_text()
+                                                            st.rerun()
+
+                                                with col_b2:
+                                                    selected_alt_token = st.session_state.get('selected_alt_token')
+                                                    if selected_alt_token:
+                                                        if st.button("Force & Retry"):
+                                                            log_action("rethink_force", {"step": selected_idx, "token": selected_alt_token})
+                                                            with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
+                                                                new_trace, new_analysis = session.rethink_from_step(
+                                                                    trace,
+                                                                    selected_idx,
+                                                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
+                                                                    force_token=selected_alt_token,
+                                                                    steering_prompt=steering_prompt,
+                                                                )
+                                                                # Update metrics
+                                                                tokens_gen = (len(new_trace.tokenlist) - selected_idx)
+                                                                st.session_state['total_tokens_used'] += tokens_gen
+                                                                st.session_state['interaction_turns'] += 1
+                                                                st.session_state['correction_tokens'] += tokens_gen
+                                                                st.session_state['correction_turns'] += 1
+
+                                                                st.session_state['trace'] = new_trace
+                                                                st.session_state['analysis'] = new_analysis
+                                                                st.session_state['selected_token_index'] = selected_idx
+                                                                st.session_state['rethink_start_index'] = selected_idx
+                                                                st.session_state.messages[-1]["content"] = new_trace.get_full_text()
+                                                                st.rerun()
+                                                    else:
+                                                        st.info("Select an alternative to enable forced rethink.")
+
+                                                st.divider()
+                                                
+                                                # Explanation
+                                                st.markdown("**State Insight**")
+                                                probe_key = f"{selected_idx}_{st.session_state['selected_layer']}"
+                                                
+                                                if probe_key not in probe_cache:
+                                                    if st.button("Analyze Layer Meaning", key=f"analyze_{probe_key}"):
+                                                        with st.spinner("Analyzing state..."):
+                                                            probe_cache[probe_key] = session.controller.probe_state(
+                                                                trace, selected_idx, 
+                                                                layer_idx=st.session_state['selected_layer'],
+                                                                cached_state=layer_state,
+                                                                cached_trajectory=trajectory
+                                                            )
+                                                            st.rerun()
+                                                
+                                                probe_result = probe_cache.get(probe_key, {})
+                                                explanation_raw = probe_result.get("explanation")
+                                                
+                                                if explanation_raw:
+                                                    import re
+                                                    parsed_json = None
+                                                    try:
+                                                        # Try to extract JSON block
+                                                        match = re.search(r'```json\s*(.*?)\s*```', explanation_raw, re.DOTALL)
+                                                        if match:
+                                                            parsed_json = json.loads(match.group(1))
+                                                        else:
+                                                            # Try parsing raw string if it looks like JSON
+                                                            if explanation_raw.strip().startswith('{'):
+                                                                parsed_json = json.loads(explanation_raw)
+                                                    except:
+                                                        pass
+                                                    
+                                                    if parsed_json and isinstance(parsed_json, dict):
+                                                        # Try to find the list of predictions
+                                                        preds = parsed_json.get("token_predictions")
+                                                        if isinstance(preds, list):
+                                                            for p in preds:
+                                                                token_str = p.get('token', '')
+                                                                conf = p.get('confidence', 0)
+                                                                reason = p.get('reasoning', '')
+                                                                with st.expander(f"Token: '{token_str}' ({conf:.2%})"):
+                                                                    st.write(reason)
+                                                        else:
+                                                            st.json(parsed_json)
+                                                    else:
+                                                        st.info(explanation_raw)
                                 else:
-                                    st.info("No alternatives available.")
+                                    st.info("Hidden state not available for this token.")
 
                             with tabs[2]:
                                 st.subheader("Branching")
@@ -491,6 +620,8 @@ if 'model' in st.session_state:
                                         tokens_generated = sum(len(b.trace.tokenlist) - selected_idx for b in branches)
                                         st.session_state['total_tokens_used'] += tokens_generated
                                         st.session_state['interaction_turns'] += 1
+                                        st.session_state['correction_tokens'] += tokens_generated
+                                        st.session_state['correction_turns'] += 1
 
                                         st.session_state['branch_candidates'] = branches
                                         st.session_state['branch_origin_idx'] = selected_idx
@@ -525,97 +656,20 @@ if 'model' in st.session_state:
                                 else:
                                     st.info("No branch candidates yet.")
 
-                            with tabs[3]:
-                                st.subheader("Hidden States & Explanations")
-                                if selected_idx not in hs_cache:
-                                    with st.spinner("Computing hidden states for this token..."):
-                                        hs_cache[selected_idx] = session.controller.compute_hidden_states_for_step(
-                                            trace,
-                                            selected_idx,
-                                            layers=None,
-                                        )
-
-                                token_state = hs_cache.get(selected_idx)
-                                if token_state:
-                                    trajectory = token_state.trajectory
-                                    layer_ids = sorted(trajectory.to_dict().keys())
-                                    if layer_ids:
-                                        selected_layer = st.session_state.get('selected_layer')
-                                        if selected_layer is None or selected_layer not in layer_ids:
-                                            selected_layer = layer_ids[-1]
-                                            st.session_state['selected_layer'] = selected_layer
-
-                                        header_col, control_col = st.columns([3, 2], gap="small")
-                                        with header_col:
-                                            st.markdown("Select a layer to inspect:")
-
-                                        with control_col:
-                                            min_cols = st.selectbox(
-                                                "Min buttons per row",
-                                                options=list(range(2, 33)),
-                                                index=list(range(2, 33)).index(8),
-                                                key=f"layer_min_cols_{selected_idx}",
-                                                help="Lower bound for how many layer buttons appear per row",
-                                                label_visibility="collapsed",
-                                            )
-                                            st.caption("Min buttons per row")
-
-                                        total_layers = len(layer_ids)
-
-                                        def _calc_cols(n: int) -> int:
-                                            return max(min_cols, min(3, math.floor(n / 4) + min_cols))
-
-                                        grid_size = _calc_cols(total_layers)
-
-                                        for row_start in range(0, total_layers, grid_size):
-                                            cols = st.columns(min(grid_size, total_layers - row_start), gap="small")
-                                            for offset, layer_id in enumerate(layer_ids[row_start:row_start + grid_size]):
-                                                with cols[offset]:
-                                                    if st.button(f"L{layer_id}", key=f"layer_{selected_idx}_{layer_id}"):
-                                                        st.session_state['selected_layer'] = layer_id
-                                                        st.rerun()
-
-                                        layer_state = trajectory.get_by_layer(st.session_state['selected_layer'])
-                                        if layer_state:
-                                            logit_lens = session.controller._decode_hidden_state(layer_state.get_value(), top_k=10)
-                                            lens_df = pd.DataFrame(logit_lens, columns=["Token", "Prob"])
-
-                                            lens_col, explain_col = st.columns(2)
-                                            with lens_col:
-                                                st.markdown(f"**Logit Lens @ Layer {st.session_state['selected_layer']}:**")
-                                                st.dataframe(lens_df.style.format({"Prob": "{:.4f}"}), hide_index=True, width='stretch')
-
-                                            probe_key = f"{selected_idx}_{st.session_state['selected_layer']}"
-                                            if probe_key not in probe_cache:
-                                                with st.spinner("Running explanation probe..."):
-                                                    probe_cache[probe_key] = session.controller.probe_state(
-                                                        trace,
-                                                        selected_idx,
-                                                        layer_idx=st.session_state['selected_layer'],
-                                                        cached_state=layer_state,
-                                                        cached_trajectory=trajectory,
-                                                    )
-
-                                            probe_result = probe_cache.get(probe_key, {})
-                                            with explain_col:
-                                                st.markdown("**State Explanation:**")
-                                                st.write(probe_result.get("explanation", ""))
-                                        else:
-                                            st.info("Layer state unavailable.")
-                                    else:
-                                        st.info("No layers available in trajectory.")
-                                else:
-                                    st.info("Hidden state not available for this token.")
-
     # Chat Input
     col_input, col_run, col_clear = st.columns([8, 1, 1])
 
     with col_run:
-        if st.button("Run", help="Regenerate response"):
+        if st.button("Rerun", help="Regenerate response and reset metrics"):
             if st.session_state.messages:
                 # If last message is assistant, remove it to regenerate
                 if st.session_state.messages[-1]["role"] == "assistant":
                     st.session_state.messages.pop()
+                
+                # Reset metrics for this new run
+                st.session_state['total_tokens_used'] = 0
+                st.session_state['interaction_turns'] = 0
+                
                 st.session_state['trigger_generation'] = True
                 st.rerun()
 
@@ -680,8 +734,14 @@ if 'model' in st.session_state:
                 )
 
                 # Update metrics
-                st.session_state['total_tokens_used'] += len(trace.tokenlist)
+                tokens_gen = len(trace.tokenlist)
+                st.session_state['total_tokens_used'] += tokens_gen
                 st.session_state['interaction_turns'] += 1
+                
+                # If this is a correction (history > 1), update correction metrics
+                if len(st.session_state.messages) > 1:
+                    st.session_state['correction_tokens'] += tokens_gen
+                    st.session_state['correction_turns'] += 1
 
                 full_response = "".join(stream_tokens)
                 live_stream_placeholder.markdown(full_response)

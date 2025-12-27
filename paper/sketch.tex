@@ -100,41 +100,46 @@ This transforms the generation from a single chain into a user-guided tree searc
 
 \section{Experiments}
 
-To validate the effectiveness of Rethink in addressing the "Knowledge Asymmetry" problem and enhancing user agency, we pivot our experimental focus from general open-ended generation to \textbf{Steerability and Constraint Satisfaction}. In these scenarios, success is objectively verifiable (e.g., "did the model use a forbidden word?"), making them ideal for measuring the precision of human-in-the-loop steering compared to black-box prompting.
+We design our experiments to answer two fundamental questions: (1) \textbf{Theoretical Efficacy:} Can "Glass-box Steering" technically outperform "Black-box Prompting" in satisfying hard constraints? (2) \textbf{Human Agency:} In scenarios where automated alignment fails or lacks nuance, does Rethink empower users to correct errors more efficiently than traditional dialogue?
 
 \subsection{Datasets and Experimental Settings}
-We utilize the \textbf{Instruction Following Evaluation (IFEval)} dataset (Zhou et al., 2023), a benchmark designed to measure a model's ability to follow verifiable instructions. To conduct a focused study on steerability, we constructed a curated \textbf{120-item Task Set} derived from IFEval, supplemented with custom templates.
+To isolate the impact of the interaction mechanism from the model's knowledge boundaries, we focus on \textbf{Instruction Following} tasks where success is objectively verifiable. We utilize a curated subset of \textbf{IFEval} (Zhou et al., 2023), supplemented with custom templates to form a balanced benchmark.
 
-The tasks are categorized into two distinct types of hard constraints:
+\paragraph{Task Categories.}
 \begin{itemize}
-    \item \textbf{Forbidden Words (Taboo):} Negative constraints where the model must generate text without using specific forbidden words. This tests the model's ability to suppress high-probability tokens and the user's ability to prune erroneous paths via \textbf{Truncation}.
-    \item \textbf{JSON Format:} Structural constraints where the model must generate valid JSON output, often adhering to a specific schema. This tests the model's syntax adherence and allows users to correct structural errors via \textbf{Forcing} (token selection).
+    \item \textbf{Forbidden Words (Taboo):} The model must generate a response while strictly avoiding a set of forbidden words. This tests the ability to suppress high-probability tokens and navigate the "tail" of the distribution.
+    \item \textbf{JSON Format Compliance:} The model must output a valid JSON object adhering to a specific schema. This tests structural adherence and the ability to recover from syntax errors.
 \end{itemize}
 
-\noindent \textbf{Model Configuration.} Our primary backbone model is \textbf{Llama-3-8B-Instruct}. We also employ \textbf{Qwen2.5-7B-Instruct} as a secondary model to validate the generalizability of our findings. For the Rethink setup, we employ a deterministic \textbf{Checker} for each task type. In the simulation, an intervention is triggered immediately when the Checker detects a violation (e.g., a forbidden word is generated or JSON syntax is broken).
+\paragraph{Model Configuration.}
+We use \textbf{Llama-3-8B-Instruct} as the primary backbone. All experiments are conducted with temperature $T=0.7$ to allow for diverse sampling, which is critical for demonstrating the value of steering intervention.
 
 \subsection{Baselines}
-We compare the Rethink framework against two baselines that represent the current state of interaction:
+We compare Rethink against both automated and human-centric baselines to evaluate its performance comprehensively.
 
+\paragraph{Automated Baselines (RQ1).}
+To establish the theoretical upper bound of different correction paradigms:
 \begin{itemize}
-    \item \textbf{Standard Generation (Zero-shot):} The model generates the response in a single pass given the instruction. This serves as the lower bound, establishing the base model's capability to satisfy constraints without any intervention.
-    \item \textbf{Reflexion (Self-Correction):} This baseline simulates the "Prompt Engineering" approach. When the model violates a constraint (detected by the Checker), the error details are fed back to the model as a new prompt (e.g., \textit{"You failed the constraint: used forbidden word 'apple'. Please regenerate."}). The model then attempts to self-correct by re-generating the entire response. This measures the efficiency of "Black-box Prompting."
+    \item \textbf{Standard Generation (Zero-shot):} The model generates the response in a single pass without intervention.
+    \item \textbf{Reflexion (Automated Prompting):} A feedback loop where a deterministic checker identifies errors, and the error message is fed back to the model as a prompt (e.g., "You used a forbidden word. Retry.") for up to $K=3$ rounds. This represents the state-of-the-art in "Black-box" self-correction.
 \end{itemize}
 
-\noindent \textbf{Rethink (Ours).} We simulate the "Glass-box Steering" approach. Instead of re-prompting after a failure, the system performs a \textbf{Local Repair}. When a violation is detected at token $t$, the system performs a \textbf{KV Cache Truncation} to roll back the state to $t-k$ and/or uses \textbf{Token Forcing} to ban the violating token and sample the next best valid alternative.
-
-\noindent \textbf{Metrics.} We evaluate performance using three key metrics:
+\paragraph{Human-in-the-Loop Baselines (RQ2).}
+To evaluate user experience and agency:
 \begin{itemize}
-    \item \textbf{Constraint Satisfaction Rate (CSR):} The percentage of tasks successfully completed within a fixed number of turns ($N$).
-    \item \textbf{Token Saving Rate (TSR):} Calculated as $1 - \frac{\text{Tokens}_{\text{Rethink}}}{\text{Tokens}_{\text{Reflexion}}}$. This measures the computational efficiency of local repairs compared to full re-generation.
-    \item \textbf{Turns-to-Success:} The average number of correction rounds required to satisfy the constraint.
+    \item \textbf{Chat-based Correction (Traditional HCI):} Participants interact with the model via a standard chat interface. When the model fails a constraint, participants must formulate natural language prompts to guide the model (e.g., "Please remove the word 'happy'"). This baseline captures the high cognitive load and potential frustration of current LLM interactions.
 \end{itemize}
+
+\paragraph{Ours: Rethink (Interactive Steering).}
+Users (or the simulation agent) are presented with the \textbf{Logit Lens} view. Upon detecting a violation or a suboptimal choice:
+1.  \textbf{Truncate:} The user rewinds the generation to the step immediately preceding the error.
+2.  \textbf{Force/Steer:} The user intervenes by banning the violating token or selecting a preferred alternative from the Top-$K$ candidates, effectively pruning the erroneous branch from the search tree.
 
 \subsection{Main Results}
-\textit{(To be completed)}
+\textit{[To be completed based on simulation data. Expected outcome: Rethink achieves higher Constraint Satisfaction Rate (CSR) with fewer generated tokens compared to Reflexion.]}
 
 \subsection{Results on More LLMs}
-\textit{(To be completed)}
+\textit{[To be completed. Plan to extend evaluation to Qwen-2.5-7B and Mistral-7B to demonstrate generalizability.]}
 
 \section{Conclusion}
 The construction of the Rethink framework is grounded in the philosophy of \textbf{"Software Engineering for AI"} and \textbf{"White-box Steering."} Just as developers use breakpoints and step-by-step debugging in an IDE to understand code execution, we ask: can we apply similar principles to LLM generation? Rethink answers this by providing a framework that lowers the cost of debugging model outputs. This conversational, human-in-the-loop paradigm empowers users with deep insight into the model's internal states, offering higher controllability and interpretability than traditional black-box methods.
