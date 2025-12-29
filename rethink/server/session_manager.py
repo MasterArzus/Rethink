@@ -2,6 +2,10 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
 from rethink.engine.llama import RethinkLlamaForCausalLM
 from rethink.engine.qwen import RethinkQwenForCausalLM
+try:
+    from rethink.engine.qwen import RethinkQwen3ForCausalLM
+except ImportError:
+    RethinkQwen3ForCausalLM = None
 import streamlit as st
 
 @st.cache_resource
@@ -21,6 +25,8 @@ def load_model_and_tokenizer(model_name_or_path):
         model_class = RethinkLlamaForCausalLM
     elif "Qwen2ForCausalLM" in architectures:
         model_class = RethinkQwenForCausalLM
+    elif "Qwen3ForCausalLM" in architectures and RethinkQwen3ForCausalLM is not None:
+        model_class = RethinkQwen3ForCausalLM
     else:
         # Fallback or error? For now let's default to AutoModel but that won't have our instrumentation
         # Or maybe we should raise an error if we want to enforce instrumentation

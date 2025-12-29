@@ -317,10 +317,17 @@ if 'model' in st.session_state:
                         constraints = st.session_state['current_constraints']
                         task_type = st.session_state['current_task_type']
                         full_text = trace.get_full_text()
+                        
+                        # Filter out <think>...</think> for checker if present
+                        checker_text = full_text
+                        if "</think>" in full_text:
+                            parts = full_text.split("</think>")
+                            if len(parts) > 1:
+                                checker_text = parts[-1].strip()
                     
                         try:
                             checker = get_checker(task_type)
-                            passed, error_msg = checker.check(full_text, constraints)
+                            passed, error_msg = checker.check(checker_text, constraints)
                         
                             if passed:
                                 st.success("✅ Constraint Satisfied!")
@@ -744,7 +751,15 @@ if 'model' in st.session_state:
                     st.session_state['correction_turns'] += 1
 
                 full_response = "".join(stream_tokens)
-                live_stream_placeholder.markdown(full_response)
+                
+                # Filter out <think>...</think> for display and history if present
+                display_response = full_response
+                if "</think>" in full_response:
+                    parts = full_response.split("</think>")
+                    if len(parts) > 1:
+                        display_response = parts[-1].strip()
+                
+                live_stream_placeholder.markdown(display_response)
 
                 st.session_state['trace'] = trace
                 st.session_state['analysis'] = analysis
@@ -756,7 +771,7 @@ if 'model' in st.session_state:
                 st.session_state['selected_token_index'] = 0
                 st.session_state['trace_id'] = str(uuid.uuid4())
             
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
+                st.session_state.messages.append({"role": "assistant", "content": display_response})
                 st.rerun()
 
 else:

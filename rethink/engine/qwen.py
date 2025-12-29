@@ -22,8 +22,9 @@ class TracePack:
     extra: Dict[str, torch.Tensor]
 
 
-class RethinkQwenForCausalLM(Qwen2ForCausalLM):
-    """Thin extension that records per-token metadata during decoding."""
+
+class RethinkQwenMixin:
+    """Mixin that records per-token metadata during decoding."""
 
     def __init__(self, config, instrumentation_cfg: Optional[InstrumentationConfig] = None):
         super().__init__(config)
@@ -210,3 +211,15 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         """
 
         raise NotImplementedError("Rethink intervention strategies are not defined yet")
+
+
+class RethinkQwenForCausalLM(RethinkQwenMixin, Qwen2ForCausalLM):
+    pass
+
+try:
+    from transformers import Qwen3ForCausalLM
+    class RethinkQwen3ForCausalLM(RethinkQwenMixin, Qwen3ForCausalLM):
+        pass
+except ImportError:
+    pass
+
