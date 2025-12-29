@@ -97,7 +97,10 @@ class InteractiveSession:
             prompt=final_prompt,
             generation_kwargs={
                 "max_new_tokens": max_new_tokens,
-                "eos_token_id": terminators
+                "eos_token_id": terminators,
+                "repetition_penalty": 1.1,
+                "temperature": 0.6,
+                "top_p": 0.9
             },
             stream_callback=stream_callback
         )

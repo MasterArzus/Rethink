@@ -23,6 +23,9 @@ class TabooChecker(BaseChecker):
         if not forbidden_words:
             return True, None
 
+        # Remove <|end_of_sentence|> to avoid false positives if forbidden words are part of the token
+        response = response.replace("<|end_of_sentence|>", "")
+
         # Normalize response to lowercase for case-insensitive matching
         response_lower = response.lower()
         
