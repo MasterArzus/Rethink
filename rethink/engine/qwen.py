@@ -75,7 +75,8 @@ class RethinkQwenMixin:
                 if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
-                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
+                            # States are already HiddenState objects; reuse latest directly
+                            current_states[l] = states[-1]
 
                 token_logs.append(
                     TokenRecorder(
@@ -168,7 +169,8 @@ class RethinkQwenMixin:
                 if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
                     for l, states in self._recorder.storage.items():
                         if states:
-                            current_states[l] = HiddenState(layer_idx=l, value=states[-1])
+                            # States are already HiddenState objects; reuse latest directly
+                            current_states[l] = states[-1]
 
                 token_str = tokenizer.decode([token_id])
                 if stream_callback:
