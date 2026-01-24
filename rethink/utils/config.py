@@ -41,11 +41,11 @@ class GenerationConfig:
     temperature: float = 0.4
     top_p: float = 0.7
     top_k: Optional[int] = 40
-    repetition_penalty: float = 1.15
+    repetition_penalty: float = 1.0
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
     max_new_tokens: int = 512
-    no_repeat_ngram_size: int = 3
+    no_repeat_ngram_size: int = 0
     early_stopping: bool = True
     do_sample: bool = True
     

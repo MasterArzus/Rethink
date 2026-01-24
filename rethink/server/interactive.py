@@ -72,7 +72,7 @@ class InteractiveSession:
             
         return filepath
 
-    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128, stream_callback=None):
+    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128, stream_callback=None, **kwargs):
         """
         Run the initial inference to get the baseline trace.
         """
@@ -90,18 +90,38 @@ class InteractiveSession:
         # Add <|im_end|> for Qwen if present
         if "<|im_end|>" in self.controller.tokenizer.get_vocab():
             terminators.append(self.controller.tokenizer.convert_tokens_to_ids("<|im_end|>"))
+
+        # Prepare generation kwargs
+        # Start with defaults from config if available
+        gen_kwargs = {
+            "max_new_tokens": max_new_tokens,
+            "eos_token_id": terminators,
+            "repetition_penalty": 1.0, # Default safe value
+            "temperature": 0.6,
+            "top_p": 0.9
+        }
+        
+        # Override with values from controller config if set
+        if hasattr(self.controller, 'cfg') and hasattr(self.controller.cfg, 'generation'):
+             # Convert config object to dict, handling potential missing values
+             cfg_dict = vars(self.controller.cfg.generation) if hasattr(self.controller.cfg.generation, "__dict__") else {}
+             for k, v in cfg_dict.items():
+                 # Filter out keys that might not be valid for generate() or handle specifically
+                 if v is not None:
+                     gen_kwargs[k] = v
+        
+        # Update with explicitly passed defaults (like max_new_tokens from args)
+        gen_kwargs["max_new_tokens"] = max_new_tokens
+        gen_kwargs["eos_token_id"] = terminators
+        
+        # Finally update with kwargs passed to this function
+        gen_kwargs.update(kwargs)
             
         # Generate and record
         trace_pack = self.controller.model.generate_autoregressive_trace(
             tokenizer=self.controller.tokenizer,
             prompt=final_prompt,
-            generation_kwargs={
-                "max_new_tokens": max_new_tokens,
-                "eos_token_id": terminators,
-                "repetition_penalty": 1.1,
-                "temperature": 0.6,
-                "top_p": 0.9
-            },
+            generation_kwargs=gen_kwargs,
             stream_callback=stream_callback
         )
         

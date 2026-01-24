@@ -122,12 +122,26 @@ else:
 with st.sidebar.expander("Edit Generation Parameters"):
     temperature = st.slider("Temperature", 0.0, 2.0, float(gen_cfg_data.get("temperature", 0.4)))
     top_p = st.slider("Top P", 0.0, 1.0, float(gen_cfg_data.get("top_p", 0.7)))
-    max_new_tokens = st.slider("Max New Tokens", 16, 1024, int(gen_cfg_data.get("max_new_tokens", 512)))
+    max_new_tokens = st.slider("Max New Tokens", 16, 2048, int(gen_cfg_data.get("max_new_tokens", 512)))
+    
+    # Advanced Params
+    repetition_penalty = st.slider(
+        "Repetition Penalty", 1.0, 2.0, 
+        float(gen_cfg_data.get("repetition_penalty", 1.0)), 
+        help="1.0 means no penalty. >1.0 discourages repetition. For Chinese, keep at 1.0 to avoid garbled text."
+    )
+    no_repeat_ngram_size = st.number_input(
+        "No Repeat N-Gram Size", 0, 10, 
+        int(gen_cfg_data.get("no_repeat_ngram_size", 0)),
+        help="0 means disabled. For Chinese, 0 is recommended."
+    )
     
     gen_cfg_data.update({
         "temperature": temperature,
         "top_p": top_p,
-        "max_new_tokens": max_new_tokens
+        "max_new_tokens": max_new_tokens,
+        "repetition_penalty": repetition_penalty,
+        "no_repeat_ngram_size": no_repeat_ngram_size
     })
 
 # 3. Prompt Config
@@ -142,12 +156,12 @@ else:
     prompt_cfg_data = PromptConfig().to_dict()
 
 with st.sidebar.expander("Preview Prompt Config"):
-    st.code(yaml.dump(prompt_cfg_data, default_flow_style=False), language="yaml")
+    st.code(yaml.dump(prompt_cfg_data, default_flow_style=False, allow_unicode=True), language="yaml")
 
 # 4. Dataset Config
 st.sidebar.subheader("Dataset Configuration")
 dataset_config = load_yaml("/root/Rethink/configs/datasets.yaml")
-dataset_options = ["IFEval (Steerability)"] + list(dataset_config.keys())
+dataset_options = ["IFEval (Steerability)", "Hydrology QA"] + list(dataset_config.keys())
 selected_dataset_name = st.sidebar.selectbox("Select Dataset", options=dataset_options)
 
 loaded_example_question = None
@@ -209,6 +223,72 @@ if selected_dataset_name == "IFEval (Steerability)":
                 st.json(constraints)
     else:
         st.sidebar.error(f"IFEval task set not found at {ifeval_path}")
+
+elif selected_dataset_name == "Hydrology QA":
+    hydro_base_path = "/root/Rethink/dataset/hydrology_qa"
+    if os.path.exists(hydro_base_path):
+        json_files = glob.glob(os.path.join(hydro_base_path, "*.json"))
+        # Only show filenames in dropdown
+        json_options = [os.path.basename(f) for f in json_files]
+        if json_options:
+            selected_file = st.sidebar.selectbox("Select JSON File", json_options)
+            full_path = os.path.join(hydro_base_path, selected_file)
+            
+            try:
+                with open(full_path, 'r', encoding='utf-8') as f:
+                    hydro_data = json.load(f)
+                
+                total_count = len(hydro_data)
+                max_idx = max(0, total_count - 1)
+                example_idx = st.sidebar.number_input(f"Item Index (Total: {total_count})", min_value=0, max_value=max_idx, value=0)
+                
+                if hydro_data:
+                    selected_item = hydro_data[example_idx]
+                    instruction = selected_item.get("instruction", "")
+                    inp = selected_item.get("input", "")
+                    output = selected_item.get("output", "")
+                    
+                    # Combine instruction and input
+                    question = f"{instruction}\n\n{inp}" if inp else instruction
+                    
+                    # Auto-load when selection changes
+                    current_hydro_selection = (selected_file, example_idx)
+                    if 'last_hydro_selection' not in st.session_state:
+                        st.session_state['last_hydro_selection'] = None
+                        
+                    if st.session_state['last_hydro_selection'] != current_hydro_selection:
+                        # Clear previous session
+                        st.session_state.messages = []
+                        st.session_state.pop('trace', None)
+                        st.session_state.pop('analysis', None)
+                        
+                        st.session_state['user_input_area'] = question
+                        
+                        # Reset metrics on example load
+                        st.session_state['total_tokens_used'] = 0
+                        st.session_state['interaction_turns'] = 0
+                        st.session_state['correction_tokens'] = 0
+                        st.session_state['correction_turns'] = 0
+                        
+                        # Clear IFEval state if it existed
+                        st.session_state.pop('last_ifeval_selection', None)
+                        st.session_state.pop('current_constraints', None)
+                        st.session_state.pop('current_task_type', None)
+                        
+                        st.session_state['last_hydro_selection'] = current_hydro_selection
+                        st.rerun()
+                    
+                    with st.sidebar.expander("Preview Example"):
+                        st.markdown(f"**Instruction:** {instruction}")
+                        st.markdown(f"**Input:** {inp}")
+                        st.markdown(f"**Output (Answer):** {output}")
+
+            except Exception as e:
+                st.sidebar.error(f"Error loading JSON file: {e}")
+        else:
+            st.sidebar.warning("No JSON files found in dataset/hydrology_qa")
+    else:
+        st.sidebar.error(f"Hydrology QA path not found: {hydro_base_path}")
 
 elif selected_dataset_name != "None":
     dataset_path = dataset_config[selected_dataset_name]
@@ -706,6 +786,8 @@ if 'model' in st.session_state:
             stream_tokens = []
 
             def token_stream_callback(token):
+                if token:
+                    token = token.replace("\uFFFD", "")
                 stream_tokens.append(token)
                 live_stream_placeholder.markdown("".join(stream_tokens) + "▌")
 
@@ -753,7 +835,7 @@ if 'model' in st.session_state:
                 full_response = "".join(stream_tokens)
                 
                 # Filter out <think>...</think> for display and history if present
-                display_response = full_response
+                display_response = full_response.replace("\uFFFD", "")
                 if "</think>" in full_response:
                     parts = full_response.split("</think>")
                     if len(parts) > 1:

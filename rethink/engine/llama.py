@@ -137,6 +137,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
             past_key_values = None
             generated_ids = input_ids
             curr_input_ids = input_ids
+            prev_text = tokenizer.decode(generated_ids[0].tolist())
 
             for step in range(generation_kwargs.get("max_new_tokens", 128)):
                 outputs = super().forward(
@@ -172,7 +173,21 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                             # states is now List[HiddenState]
                             current_states[l] = states[-1]
 
-                token_str = tokenizer.decode([token_id])
+                generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
+                curr_input_ids = next_token.to(device)
+
+                full_text = tokenizer.decode(
+                    generated_ids[0].tolist(),
+                    skip_special_tokens=False,
+                    clean_up_tokenization_spaces=False,
+                    errors="ignore",
+                )
+                if full_text.startswith(prev_text):
+                    token_str = full_text[len(prev_text):]
+                else:
+                    token_str = tokenizer.decode([token_id])
+                token_str = token_str.replace("\uFFFD", "")
+                prev_text = full_text
                 if stream_callback:
                     stream_callback(token_str)
 
@@ -186,8 +201,6 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                         hidden_states=current_states,
                     )
                 )
-                generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
-                curr_input_ids = next_token.to(device)
                 
                 # Check for stop conditions
                 eos_token_id = generation_kwargs.get("eos_token_id")

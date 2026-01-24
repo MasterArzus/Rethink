@@ -18,7 +18,7 @@ class TraceRecorder:
 
     def get_full_text(self) -> str:
         """Reconstruct the full generated text."""
-        return "".join(self.get_token_strings())
+        return "".join(self.get_token_strings()).replace("\uFFFD", "")
 
     def get_layer_hidden_states(self, layer_idx: int) -> torch.Tensor:
         '''
