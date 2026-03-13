@@ -102,6 +102,20 @@ class PromptConfig:
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
+@dataclass
+class LoggingConfig:
+    """Configuration for structured experiment logging."""
+
+    output_dir: str = "outputs/interactive_sessions"
+    events_file: str = "events.jsonl"
+    task_summary_file: str = "task_summary.jsonl"
+    task_summary_csv: str = "task_summary.csv"
+    auto_flush: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+
 
 @dataclass
 class RethinkConfig:
@@ -111,6 +125,7 @@ class RethinkConfig:
     instrumentation: InstrumentationConfig = field(default_factory=InstrumentationConfig)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     prompt: PromptConfig = field(default_factory=PromptConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
     output_dir: str = "outputs/rethink"
     device: str = "cuda"
     seed: int = 42

@@ -15,27 +15,15 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from rethink.server.session_manager import SessionManager
 from rethink.server.interactive import InteractiveSession
+from rethink.server.experiment_logger import ExperimentLogger
 from rethink.server.component import render_token_stream
-from rethink.utils.config import GenerationConfig, PromptConfig
+from rethink.utils.config import GenerationConfig, PromptConfig, LoggingConfig
 from st_click_detector import click_detector
 from dataset.ifeval.checkers import get_checker
 
 st.set_page_config(layout="wide", page_title="Rethink")
 
 st.title("LLM Interactive Framework")
-
-# --- Logging Setup ---
-if 'action_log' not in st.session_state:
-    st.session_state['action_log'] = []
-
-def log_action(action_type, details):
-    entry = {
-        "timestamp": datetime.now().isoformat(),
-        "action": action_type,
-        "details": details,
-        "mode": st.session_state.get('experiment_mode', 'unknown')
-    }
-    st.session_state['action_log'].append(entry)
 
 # --- Helper Functions ---
 def load_config_files(subdir):
@@ -49,6 +37,100 @@ def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
+def get_condition_label():
+    return "chat" if st.session_state.get("experiment_mode") == "Baseline (Chat)" else "steer"
+
+def get_experiment_logger():
+    return st.session_state.get("experiment_logger")
+
+def build_task_key(task_context, model_name):
+    return json.dumps(
+        {
+            "task_id": task_context.get("task_id"),
+            "task_type": task_context.get("task_type"),
+            "dataset_name": task_context.get("dataset_name"),
+            "condition": get_condition_label(),
+            "model_name": model_name,
+        },
+        sort_keys=True,
+    )
+
+def set_task_context(task_id, task_type, dataset_name, prompt_text, metadata=None):
+    st.session_state["current_task_context"] = {
+        "task_id": str(task_id),
+        "task_type": task_type or "unknown",
+        "dataset_name": dataset_name,
+        "prompt_text": prompt_text,
+        "metadata": metadata or {},
+    }
+    st.session_state["suppress_task_autostart"] = None
+
+def finish_active_task(session, success, final_checker_message=None, failure_reason=None, metadata=None):
+    logger = get_experiment_logger()
+    if not logger or not logger.active_task:
+        return None
+
+    finished_key = st.session_state.get("active_logged_task_key")
+    summary = session.finish_task(
+        success=success,
+        final_checker_message=final_checker_message,
+        failure_reason=failure_reason,
+        metadata=metadata,
+    )
+    st.session_state["active_logged_task_key"] = None
+    st.session_state["last_logged_checker_trace_id"] = None
+    if finished_key:
+        st.session_state["suppress_task_autostart"] = finished_key
+    return summary
+
+def ensure_task_started(session, model_name):
+    logger = get_experiment_logger()
+    task_context = st.session_state.get("current_task_context")
+    if not logger or not task_context:
+        return
+
+    task_key = build_task_key(task_context, model_name)
+    if st.session_state.get("active_logged_task_key") == task_key:
+        return
+    if st.session_state.get("suppress_task_autostart") == task_key:
+        return
+
+    if logger.active_task:
+        finish_active_task(session, success=False, failure_reason="task_switched")
+
+    session.start_task(
+        task_id=task_context["task_id"],
+        task_type=task_context["task_type"],
+        condition=get_condition_label(),
+        model_name=model_name,
+        dataset_name=task_context["dataset_name"],
+        metadata=task_context.get("metadata", {}),
+    )
+    st.session_state["active_logged_task_key"] = task_key
+    st.session_state["last_logged_checker_trace_id"] = None
+
+def ensure_ad_hoc_task(session, model_name, prompt_text):
+    logger = get_experiment_logger()
+    if logger and logger.active_task:
+        return
+
+    set_task_context(
+        task_id=f"adhoc-{uuid.uuid4()}",
+        task_type="freeform",
+        dataset_name="freeform",
+        prompt_text=prompt_text,
+        metadata={"source": "manual_chat_input"},
+    )
+    ensure_task_started(session, model_name)
+
+def estimate_token_count(tokenizer, text):
+    if not tokenizer or not text:
+        return 0
+    try:
+        return len(tokenizer.encode(text, add_special_tokens=False))
+    except Exception:
+        return 0
+
 # --- Sidebar Configuration ---
 st.sidebar.header("Configuration")
 
@@ -59,16 +141,18 @@ experiment_mode = st.sidebar.radio(
     key="experiment_mode"
 )
 
-# Download Logs
-if st.sidebar.button("Download Logs"):
-    logs = st.session_state['action_log']
-    json_logs = json.dumps(logs, indent=2)
-    st.sidebar.download_button(
-        label="Save Log File",
-        data=json_logs,
-        file_name=f"experiment_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-        mime="application/json"
-    )
+# Study Metadata
+st.sidebar.subheader("Study Metadata")
+participant_id = st.sidebar.text_input("Participant ID", value=st.session_state.get("participant_id", "pilot"))
+st.session_state["participant_id"] = participant_id
+logger = get_experiment_logger()
+if logger:
+    logger.update_participant(participant_id)
+    st.sidebar.caption(f"Session ID: {logger.session_id}")
+    st.sidebar.caption(f"Events file: {logger.events_path}")
+    st.sidebar.caption(f"Task summary: {logger.task_summary_path}")
+else:
+    st.sidebar.caption("Logs will be persisted automatically after the model is loaded.")
 
 # --- Metrics Display for Volunteers ---
 st.sidebar.markdown("---")
@@ -208,6 +292,16 @@ if selected_dataset_name == "IFEval (Steerability)":
                 st.session_state['current_constraints'] = constraints
                 st.session_state['current_task_type'] = task_type
                 st.session_state['last_ifeval_selection'] = current_selection_state
+                set_task_context(
+                    task_id=selected_task.get("id", f"ifeval-{task_type}-{example_idx}"),
+                    task_type=task_type,
+                    dataset_name="ifeval",
+                    prompt_text=question,
+                    metadata={
+                        "filter": task_type_display,
+                        "example_index": int(example_idx),
+                    },
+                )
                 
                 # Reset metrics on task change
                 st.session_state['total_tokens_used'] = 0
@@ -274,6 +368,16 @@ elif selected_dataset_name == "Hydrology QA":
                         st.session_state.pop('last_ifeval_selection', None)
                         st.session_state.pop('current_constraints', None)
                         st.session_state.pop('current_task_type', None)
+                        set_task_context(
+                            task_id=f"hydrology-{selected_file}-{example_idx}",
+                            task_type="hydrology_qa",
+                            dataset_name="hydrology_qa",
+                            prompt_text=question,
+                            metadata={
+                                "file": selected_file,
+                                "example_index": int(example_idx),
+                            },
+                        )
                         
                         st.session_state['last_hydro_selection'] = current_hydro_selection
                         st.rerun()
@@ -324,6 +428,13 @@ elif selected_dataset_name != "None":
             
             if st.sidebar.button("Load Example"):
                 st.session_state['user_input_area'] = question
+                set_task_context(
+                    task_id=f"{selected_dataset_name}-{example_idx}",
+                    task_type=selected_dataset_name,
+                    dataset_name=selected_dataset_name,
+                    prompt_text=question,
+                    metadata={"example_index": int(example_idx)},
+                )
                 
                 # Reset metrics on example load
                 st.session_state['total_tokens_used'] = 0
@@ -349,9 +460,12 @@ if st.sidebar.button("Load Model"):
             model, tokenizer = SessionManager.get_resources(model_path)
             
             st.write("Initializing interactive session...")
+            logging_cfg = LoggingConfig(output_dir="/root/Rethink/outputs/interactive_sessions")
+            experiment_logger = ExperimentLogger(logging_cfg, participant_id=st.session_state.get("participant_id", "pilot"))
             st.session_state['model'] = model
             st.session_state['tokenizer'] = tokenizer
-            st.session_state['interactive_session'] = InteractiveSession(model, tokenizer)
+            st.session_state['experiment_logger'] = experiment_logger
+            st.session_state['interactive_session'] = InteractiveSession(model, tokenizer, experiment_logger=experiment_logger)
             
             status.update(label="Model loaded successfully!", state="complete", expanded=False)
             
@@ -362,6 +476,9 @@ if st.sidebar.button("Load Model"):
 # --- Main Interface ---
 if 'model' in st.session_state:
     session = st.session_state['interactive_session']
+    if get_experiment_logger() and session.experiment_logger is None:
+        session.set_experiment_logger(get_experiment_logger())
+    ensure_task_started(session, model_path)
 
     # Initialize chat history
     if "messages" not in st.session_state:
@@ -408,6 +525,22 @@ if 'model' in st.session_state:
                         try:
                             checker = get_checker(task_type)
                             passed, error_msg = checker.check(checker_text, constraints)
+                            current_trace_id = st.session_state.get('trace_id')
+                            if st.session_state.get("last_logged_checker_trace_id") != current_trace_id:
+                                session.record_checker_result(
+                                    passed,
+                                    error_msg,
+                                    trace_id=current_trace_id,
+                                    metadata={"task_type": task_type},
+                                )
+                                st.session_state["last_logged_checker_trace_id"] = current_trace_id
+                                if passed:
+                                    finish_active_task(
+                                        session,
+                                        success=True,
+                                        final_checker_message=error_msg,
+                                        metadata={"task_type": task_type},
+                                    )
                         
                             if passed:
                                 st.success("✅ Constraint Satisfied!")
@@ -450,7 +583,12 @@ if 'model' in st.session_state:
                                 new_idx = int(clicked_id.split("_")[1])
                                 if new_idx != selected_idx:
                                     st.session_state['selected_token_index'] = new_idx
-                                    log_action("select_token", {"index": new_idx, "token": token_data[new_idx]['token']})
+                                    session.log_event(
+                                        "token_selected",
+                                        token_index=new_idx,
+                                        selected_token=token_data[new_idx]['token'],
+                                        trace_id=st.session_state.get('trace_id'),
+                                    )
                                     st.rerun()
                             except:
                                 pass
@@ -543,6 +681,12 @@ if 'model' in st.session_state:
                                             for offset, layer_id in enumerate(layer_ids[row_start:row_start + grid_size]):
                                                 with cols[offset]:
                                                     if st.button(f"L{layer_id}", key=f"layer_{selected_idx}_{layer_id}"):
+                                                        session.log_event(
+                                                            "layer_changed",
+                                                            token_index=selected_idx,
+                                                            trace_id=st.session_state.get('trace_id'),
+                                                            metadata={"layer": layer_id},
+                                                        )
                                                         st.session_state['selected_layer'] = layer_id
                                                         st.rerun()
                                         
@@ -584,7 +728,11 @@ if 'model' in st.session_state:
                                                 col_b1, col_b2 = st.columns(2)
                                                 with col_b1:
                                                     if st.button("Truncate & Retry"):
-                                                        log_action("truncate", {"step": selected_idx})
+                                                        session.log_event(
+                                                            "truncate_clicked",
+                                                            token_index=selected_idx,
+                                                            trace_id=st.session_state.get('trace_id'),
+                                                        )
                                                         with st.spinner(f"Rethinking from step {selected_idx}..."):
                                                             new_trace, new_analysis = session.rethink_from_step(
                                                                 trace,
@@ -598,6 +746,13 @@ if 'model' in st.session_state:
                                                             st.session_state['interaction_turns'] += 1
                                                             st.session_state['correction_tokens'] += tokens_gen
                                                             st.session_state['correction_turns'] += 1
+                                                            st.session_state['trace_id'] = str(uuid.uuid4())
+                                                            session.record_generation(
+                                                                tokens_gen,
+                                                                is_correction=True,
+                                                                trace_id=st.session_state['trace_id'],
+                                                                metadata={"operation": "truncate_retry", "token_index": selected_idx},
+                                                            )
                                                         
                                                             st.session_state['trace'] = new_trace
                                                             st.session_state['analysis'] = new_analysis
@@ -610,7 +765,12 @@ if 'model' in st.session_state:
                                                     selected_alt_token = st.session_state.get('selected_alt_token')
                                                     if selected_alt_token:
                                                         if st.button("Force & Retry"):
-                                                            log_action("rethink_force", {"step": selected_idx, "token": selected_alt_token})
+                                                            session.log_event(
+                                                                "force_retry_clicked",
+                                                                token_index=selected_idx,
+                                                                selected_token=selected_alt_token,
+                                                                trace_id=st.session_state.get('trace_id'),
+                                                            )
                                                             with st.spinner(f"Forcing '{selected_alt_token}' and rethinking..."):
                                                                 new_trace, new_analysis = session.rethink_from_step(
                                                                     trace,
@@ -625,6 +785,17 @@ if 'model' in st.session_state:
                                                                 st.session_state['interaction_turns'] += 1
                                                                 st.session_state['correction_tokens'] += tokens_gen
                                                                 st.session_state['correction_turns'] += 1
+                                                                st.session_state['trace_id'] = str(uuid.uuid4())
+                                                                session.record_generation(
+                                                                    tokens_gen,
+                                                                    is_correction=True,
+                                                                    trace_id=st.session_state['trace_id'],
+                                                                    metadata={
+                                                                        "operation": "force_retry",
+                                                                        "token_index": selected_idx,
+                                                                        "forced_token": selected_alt_token,
+                                                                    },
+                                                                )
 
                                                                 st.session_state['trace'] = new_trace
                                                                 st.session_state['analysis'] = new_analysis
@@ -643,6 +814,12 @@ if 'model' in st.session_state:
                                                 
                                                 if probe_key not in probe_cache:
                                                     if st.button("Analyze Layer Meaning", key=f"analyze_{probe_key}"):
+                                                        session.log_event(
+                                                            "probe_requested",
+                                                            token_index=selected_idx,
+                                                            trace_id=st.session_state.get('trace_id'),
+                                                            metadata={"layer": st.session_state['selected_layer']},
+                                                        )
                                                         with st.spinner("Analyzing state..."):
                                                             probe_cache[probe_key] = session.controller.probe_state(
                                                                 trace, selected_idx, 
@@ -694,6 +871,12 @@ if 'model' in st.session_state:
                                 branch_steer = st.text_input("Steering prompt (optional) for branches", key=f"branch_steer_{selected_idx}")
 
                                 if st.button("Generate branches from this token"):
+                                    session.log_event(
+                                        "branch_generate_clicked",
+                                        token_index=selected_idx,
+                                        trace_id=st.session_state.get('trace_id'),
+                                        metadata={"k": branch_k, "strategy": branch_strategy},
+                                    )
                                     with st.spinner("Generating branches..."):
                                         branches = session.branch_from_step(
                                             trace,
@@ -709,6 +892,16 @@ if 'model' in st.session_state:
                                         st.session_state['interaction_turns'] += 1
                                         st.session_state['correction_tokens'] += tokens_generated
                                         st.session_state['correction_turns'] += 1
+                                        session.record_generation(
+                                            tokens_generated,
+                                            is_correction=True,
+                                            trace_id=st.session_state.get('trace_id'),
+                                            metadata={
+                                                "operation": "branch_generate",
+                                                "token_index": selected_idx,
+                                                "branch_count": len(branches),
+                                            },
+                                        )
 
                                         st.session_state['branch_candidates'] = branches
                                         st.session_state['branch_origin_idx'] = selected_idx
@@ -724,6 +917,12 @@ if 'model' in st.session_state:
                                             st.markdown(f"**{br.label}**")
                                             st.caption(snippet)
                                             if st.button(f"Adopt {br.label}", key=f"adopt_{selected_idx}_{idx}"):
+                                                session.log_event(
+                                                    "branch_adopted",
+                                                    token_index=st.session_state.get('branch_origin_idx', selected_idx),
+                                                    trace_id=st.session_state.get('trace_id'),
+                                                    metadata={"branch_label": br.label, "branch_index": idx},
+                                                )
                                                 st.session_state['trace'] = br.trace
                                                 st.session_state['analysis'] = br.analysis
                                                 st.session_state['selected_token_index'] = st.session_state.get('branch_origin_idx', selected_idx)
@@ -733,6 +932,7 @@ if 'model' in st.session_state:
                                                 st.session_state.pop('analysis_obj', None)
                                                 st.session_state['branch_candidates'] = []
                                                 st.session_state['branch_origin_idx'] = None
+                                                st.session_state['trace_id'] = str(uuid.uuid4())
                                                 # Update message content
                                                 st.session_state.messages[-1]["content"] = br.trace.get_full_text()
                                                 st.rerun()
@@ -756,30 +956,51 @@ if 'model' in st.session_state:
                 # Reset metrics for this new run
                 st.session_state['total_tokens_used'] = 0
                 st.session_state['interaction_turns'] = 0
+                st.session_state['suppress_task_autostart'] = None
                 
                 st.session_state['trigger_generation'] = True
                 st.rerun()
 
     with col_clear:
         if st.button("Clear", help="Start a new conversation"):
+            finish_active_task(session, success=False, failure_reason="cleared")
             st.session_state.messages = []
             st.session_state.pop('trace', None)
             st.session_state.pop('analysis', None)
+            st.session_state.pop('current_task_context', None)
             st.rerun()
 
     prompt = st.chat_input("Type your message...")
 
     # Check if we need to trigger generation (either from chat input or sidebar load)
     if prompt or st.session_state.get('trigger_generation', False):
+        ensure_task_started(session, model_path)
+        if not get_experiment_logger() or not get_experiment_logger().active_task:
+            fallback_prompt = prompt or (st.session_state.messages[-1]["content"] if st.session_state.messages else "")
+            ensure_ad_hoc_task(session, model_path, fallback_prompt)
+
         if prompt:
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
+            session.log_event(
+                "user_text_submitted",
+                metadata={
+                    "char_count": len(prompt),
+                    "token_count": estimate_token_count(session.controller.tokenizer, prompt),
+                },
+            )
     
         # Reset trigger
         st.session_state['trigger_generation'] = False
     
-        log_action("generate", {"prompt": prompt})
+        session.log_event(
+            "generate_clicked",
+            metadata={
+                "source": "chat_input" if prompt else "rerun_or_loaded_task",
+                "message_count": len(st.session_state.messages),
+            },
+        )
     
         with st.chat_message("assistant"):
             live_stream_placeholder = st.empty()
@@ -826,6 +1047,15 @@ if 'model' in st.session_state:
                 tokens_gen = len(trace.tokenlist)
                 st.session_state['total_tokens_used'] += tokens_gen
                 st.session_state['interaction_turns'] += 1
+                st.session_state['trace_id'] = str(uuid.uuid4())
+                session.record_generation(
+                    tokens_gen,
+                    is_correction=len(st.session_state.messages) > 1,
+                    trace_id=st.session_state['trace_id'],
+                    metadata={
+                        "source": "chat_input" if prompt else "rerun_or_loaded_task",
+                    },
+                )
                 
                 # If this is a correction (history > 1), update correction metrics
                 if len(st.session_state.messages) > 1:
@@ -851,7 +1081,6 @@ if 'model' in st.session_state:
                 st.session_state['selected_layer'] = None
                 st.session_state.pop('analysis_obj', None)
                 st.session_state['selected_token_index'] = 0
-                st.session_state['trace_id'] = str(uuid.uuid4())
             
                 st.session_state.messages.append({"role": "assistant", "content": display_response})
                 st.rerun()

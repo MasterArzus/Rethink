@@ -50,6 +50,20 @@ python run_oracle_baseline.py \
     --dataset gsm8k
 ```
 
+### 5. IFEval Constrained Decoding Baseline
+
+Run the verifier-backed constrained decoding baseline for Taboo and JSON tasks.
+
+```bash
+python experiments/ifeval/run_constrained_decoding.py \
+    --dataset-path /root/Rethink/dataset/ifeval/taskset_60_hard.json \
+    --model llama3_8b
+```
+
+This runner uses:
+* `bad_words_ids` for Taboo forbidden-word blocking.
+* schema-driven constrained JSON generation for JSON tasks, with a safe fallback to a checker-compliant JSON template if a model does not support the constrained path cleanly.
+
 ## ⚙️ Configuration
 
 ### Model Configs (`configs/models/`)

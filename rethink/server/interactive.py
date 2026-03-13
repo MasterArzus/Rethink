@@ -10,9 +10,10 @@ from rethink.recorder.trace_recorder import TraceRecorder
 from rethink.recorder.token_recorder import TokenRecorder
 from rethink.analysis.trace_analysis import TraceAnalysis
 from rethink.utils.config import RethinkConfig, DatasetSlice, InstrumentationConfig
+from rethink.server.experiment_logger import ExperimentLogger
 
 class InteractiveSession:
-    def __init__(self, model, tokenizer, cfg: RethinkConfig = None):
+    def __init__(self, model, tokenizer, cfg: RethinkConfig = None, experiment_logger: Optional[ExperimentLogger] = None):
         if cfg is None:
             # Default configuration for interactive mode
             cfg = RethinkConfig(
@@ -29,9 +30,36 @@ class InteractiveSession:
         self.controller = RethinkController(model, tokenizer, cfg)
         self.current_trace = None
         self.analysis_results = None
+        self.experiment_logger = experiment_logger
         
         # Ensure output directory exists
         os.makedirs(self.cfg.output_dir, exist_ok=True)
+
+    def set_experiment_logger(self, experiment_logger: ExperimentLogger):
+        self.experiment_logger = experiment_logger
+
+    def start_task(self, **kwargs):
+        if self.experiment_logger:
+            return self.experiment_logger.start_task(**kwargs)
+        return None
+
+    def log_event(self, event_type: str, **kwargs):
+        if self.experiment_logger:
+            return self.experiment_logger.log_event(event_type, **kwargs)
+        return None
+
+    def record_generation(self, generated_tokens: int, **kwargs):
+        if self.experiment_logger:
+            self.experiment_logger.record_generation(generated_tokens, **kwargs)
+
+    def record_checker_result(self, passed: bool, message: Optional[str], **kwargs):
+        if self.experiment_logger:
+            self.experiment_logger.record_checker_result(passed, message, **kwargs)
+
+    def finish_task(self, **kwargs):
+        if self.experiment_logger:
+            return self.experiment_logger.finish_task(**kwargs)
+        return None
 
     def save_session(self, filename=None):
         """

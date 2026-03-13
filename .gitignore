@@ -27,3 +27,7 @@ dataset/hydrology_qa
 dataset/prompts/
 outputs/
 *.github/
+
+*.csv
+*.jsonl
+*.log
