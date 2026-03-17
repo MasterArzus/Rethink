@@ -72,6 +72,21 @@ You can define model-specific parameters in YAML files.
     *   Llama-3-8B: `20`
     *   DeepSeek-R1: `20`
 
+The repository now includes ready-to-use model configs for:
+*   Existing 8B: `llama3_8b.yaml`, `deepseek_r1.yaml`, `qwen3_8b.yaml`
+*   Added 1.5B: `qwen2_5_1_5b.yaml`, `deepseek_r1_qwen_1_5b.yaml`
+*   Added 13B: `llama2_13b_chat.yaml`, `vicuna_13b.yaml`
+
+Example IFEval runs (single model):
+
+```bash
+python experiments/ifeval/run_evaluation.py --method regenerate --model qwen2_5_1_5b
+python experiments/ifeval/run_constrained_decoding.py --model qwen2_5_1_5b
+
+python experiments/ifeval/run_evaluation.py --method regenerate --model vicuna_13b
+python experiments/ifeval/run_constrained_decoding.py --model vicuna_13b
+```
+
 ### Metrics (`rethink/analysis/token_analysis.py`)
 *   **Internal Conflict**: KL Divergence between intermediate and final layer logits.
 *   **Semantic Ambiguity**: Cosine similarity of top-k token embeddings.

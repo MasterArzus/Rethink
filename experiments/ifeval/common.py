@@ -9,6 +9,10 @@ MODELS = {
     "deepseek_r1": "/root/autodl-fs/deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
     "llama3_8b": "/root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct",
     "qwen3_8b": "/root/autodl-fs/Qwen/Qwen3-8B",
+    "deepseek_r1_qwen_1_5b": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    "qwen2_5_1_5b": "Qwen/Qwen2.5-1.5B-Instruct",
+    "llama2_13b_chat": "NousResearch/Llama-2-13b-chat-hf",
+    "vicuna_13b": "lmsys/vicuna-13b-v1.5",
 }
 
 DEFAULT_DATASET_PATH = "/root/Rethink/dataset/ifeval/taskset_60_hard.json"

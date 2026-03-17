@@ -37,6 +37,17 @@ def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
+
+def model_config_sort_key(filename):
+    name = filename.lower()
+    if "1_5b" in name or "1.5b" in name:
+        return (0, name)
+    if "8b" in name:
+        return (1, name)
+    if "13b" in name:
+        return (2, name)
+    return (3, name)
+
 def get_condition_label():
     return "chat" if st.session_state.get("experiment_mode") == "Baseline (Chat)" else "steer"
 
@@ -182,7 +193,9 @@ st.sidebar.markdown("---")
 # 1. Model Config
 st.sidebar.subheader("Model Configuration")
 model_configs = load_config_files("models")
-selected_model_config_file = st.sidebar.selectbox("Select Model Config", options=list(model_configs.keys()) + ["Custom"])
+model_config_options = sorted(model_configs.keys(), key=model_config_sort_key)
+selected_model_config_file = st.sidebar.selectbox("Select Model Config", options=model_config_options + ["Custom"])
+st.sidebar.caption("Available size tiers: 1.5B / 8B / 13B")
 
 if selected_model_config_file != "Custom":
     model_cfg_path = model_configs[selected_model_config_file]
