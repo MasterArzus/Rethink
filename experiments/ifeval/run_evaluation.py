@@ -37,8 +37,15 @@ def parse_args():
     return parser.parse_args()
 
 
+def apply_chat_template(tokenizer, messages):
+    if hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template:
+        return tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt")
+    prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
+    return tokenizer(prompt, return_tensors="pt").input_ids
+
+
 def generate_response(model, tokenizer, messages, max_new_tokens):
-    inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt").to(model.device)
+    inputs = apply_chat_template(tokenizer, messages).to(model.device)
     input_len = inputs.shape[1]
     with torch.no_grad():
         outputs = model.generate(inputs, max_new_tokens=max_new_tokens, do_sample=False)

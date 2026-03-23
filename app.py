@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import math
 import glob
+import re
 import yaml
 import sys
 import datasets
@@ -38,13 +39,21 @@ def load_yaml(path):
         return yaml.safe_load(f)
 
 
+def strip_think_content(text):
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    trailing_open = cleaned.find("<think>")
+    if trailing_open != -1:
+        cleaned = cleaned[:trailing_open]
+    return cleaned
+
+
 def model_config_sort_key(filename):
     name = filename.lower()
     if "1_5b" in name or "1.5b" in name:
         return (0, name)
     if "8b" in name:
         return (1, name)
-    if "13b" in name:
+    if "13b" in name or "14b" in name:
         return (2, name)
     return (3, name)
 
@@ -195,7 +204,7 @@ st.sidebar.subheader("Model Configuration")
 model_configs = load_config_files("models")
 model_config_options = sorted(model_configs.keys(), key=model_config_sort_key)
 selected_model_config_file = st.sidebar.selectbox("Select Model Config", options=model_config_options + ["Custom"])
-st.sidebar.caption("Available size tiers: 1.5B / 8B / 13B")
+st.sidebar.caption("Available size tiers: 1.5B / 8B / 13B-14B")
 
 if selected_model_config_file != "Custom":
     model_cfg_path = model_configs[selected_model_config_file]
@@ -240,6 +249,12 @@ with st.sidebar.expander("Edit Generation Parameters"):
         "repetition_penalty": repetition_penalty,
         "no_repeat_ngram_size": no_repeat_ngram_size
     })
+
+hide_think_for_display = st.sidebar.checkbox(
+    "Hide <think> in UI",
+    value=True,
+    help="Hide reasoning blocks during streaming and final display to reduce duplicated think content."
+)
 
 # 3. Prompt Config
 st.sidebar.subheader("Prompt Configuration")
@@ -528,12 +543,7 @@ if 'model' in st.session_state:
                         task_type = st.session_state['current_task_type']
                         full_text = trace.get_full_text()
                         
-                        # Filter out <think>...</think> for checker if present
-                        checker_text = full_text
-                        if "</think>" in full_text:
-                            parts = full_text.split("</think>")
-                            if len(parts) > 1:
-                                checker_text = parts[-1].strip()
+                        checker_text = strip_think_content(full_text).strip() or full_text
                     
                         try:
                             checker = get_checker(task_type)
@@ -1023,7 +1033,10 @@ if 'model' in st.session_state:
                 if token:
                     token = token.replace("\uFFFD", "")
                 stream_tokens.append(token)
-                live_stream_placeholder.markdown("".join(stream_tokens) + "▌")
+                streamed = "".join(stream_tokens)
+                if hide_think_for_display:
+                    streamed = strip_think_content(streamed)
+                live_stream_placeholder.markdown(streamed + "▌")
 
             with st.spinner("Generating trace..."):
                 session.controller.cfg.prompt = PromptConfig(**prompt_cfg_data)
@@ -1077,12 +1090,9 @@ if 'model' in st.session_state:
 
                 full_response = "".join(stream_tokens)
                 
-                # Filter out <think>...</think> for display and history if present
                 display_response = full_response.replace("\uFFFD", "")
-                if "</think>" in full_response:
-                    parts = full_response.split("</think>")
-                    if len(parts) > 1:
-                        display_response = parts[-1].strip()
+                if hide_think_for_display:
+                    display_response = strip_think_content(display_response).strip()
                 
                 live_stream_placeholder.markdown(display_response)
 

@@ -75,7 +75,7 @@ You can define model-specific parameters in YAML files.
 The repository now includes ready-to-use model configs for:
 *   Existing 8B: `llama3_8b.yaml`, `deepseek_r1.yaml`, `qwen3_8b.yaml`
 *   Added 1.5B: `qwen2_5_1_5b.yaml`, `deepseek_r1_qwen_1_5b.yaml`
-*   Added 13B: `llama2_13b_chat.yaml`, `vicuna_13b.yaml`
+*   Added 13B-tier: `llama2_13b_chat.yaml`, `qwen_14b_chat.yaml`
 
 Example IFEval runs (single model):
 
@@ -83,8 +83,8 @@ Example IFEval runs (single model):
 python experiments/ifeval/run_evaluation.py --method regenerate --model qwen2_5_1_5b
 python experiments/ifeval/run_constrained_decoding.py --model qwen2_5_1_5b
 
-python experiments/ifeval/run_evaluation.py --method regenerate --model vicuna_13b
-python experiments/ifeval/run_constrained_decoding.py --model vicuna_13b
+python experiments/ifeval/run_evaluation.py --method regenerate --model qwen_14b_chat
+python experiments/ifeval/run_constrained_decoding.py --model qwen_14b_chat
 ```
 
 ### Metrics (`rethink/analysis/token_analysis.py`)

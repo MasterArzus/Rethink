@@ -76,104 +76,73 @@ echo "Models will be downloaded to: $MODEL_SAVE_PATH"
 mkdir -p "$MODEL_SAVE_PATH"
 
 
-read -p "Choose download source: (1) Hugging Face, (2) ModelScope [Default: 2]: " source_choice
-source_choice=${source_choice:-2} # 默认为2 (ModelScope)
+read -p "Choose download source: (1) Hugging Face, (2) ModelScope [Default: 1]: " source_choice
+source_choice=${source_choice:-1}
 
 if [ "$source_choice" == "1" ]; then
-    # --- HUGGING FACE 下载逻辑 ---
+    DOWNLOAD_SOURCE="huggingface"
     echo "Source: Hugging Face selected."
-    
-    # ---  检查并登录 Hugging Face ---
-    echo "========================================="
-    echo "Step 2: Checking and Logging into Hugging Face Hub..."
-    echo "========================================="
 
-    # 使用 whoami 检查是否已经登录，将输出重定向到/dev/null以保持界面干净
-    if huggingface-cli whoami > /dev/null 2>&1; then
-        echo "Already logged in to Hugging Face. Skipping login."
-    else
-        echo "Not logged in. You need a Hugging Face Access Token."
-        echo "Access https://huggingface.co/settings/tokens create a 'write' TOKEN."
-        echo "Then paste the token into the prompt below."
+    echo "========================================="
+    echo "Step 2: Checking Hugging Face CLI login status"
+    echo "========================================="
+    if ! huggingface-cli whoami > /dev/null 2>&1; then
+        echo "Not logged in. Please provide your Hugging Face token."
         huggingface-cli login
-        echo "Hugging Face login successful."
-        echo ""
     fi
-
-    # --- 检查 git-lfs 是否安装 ---
-    echo "Checking if git-lfs is installed..."
-    if ! command -v git-lfs &> /dev/null; then
-        echo "------------------------------------------------------------"
-        echo "Error: git-lfs is not installed."
-        echo "git-lfs is required to download large model files from Hugging Face."
-        echo ""
-        echo "Please install it using your system's package manager."
-        echo "For Debian/Ubuntu, run this command:"
-        echo "  sudo apt-get update && sudo apt-get install -y git-lfs"
-        echo ""
-        echo "After installation, please run this script again."
-        echo "------------------------------------------------------------"
-        exit 1
-    fi
-    echo "git-lfs is installed."
-    echo "-----------------------------------------"
-
-    # 定义要下载的模型
-    # 注意: 截至目前，最新的Qwen系列是Qwen2。这里以Qwen2为例。
-    # 您可以替换成您需要的任何Hugging Face上的模型ID。
-    declare -A models
-    models=(
-        # ["Qwen/Qwen2-1.5B-Instruct"]="qwen2-1.5b-instruct"
-        # ["Qwen/Qwen2-7B-Instruct"]="qwen2-7b-instruct" # 接近您提到的8B
-        # ["Qwen/Qwen2-0.5B-Instruct"]="qwen2-0.5b-instruct" # 一个更小的版本作为补充
-        # ["Qwen/Qwen3-8B"]="qwen3-8b"
-        # ["Qwen/Qwen3-4B"]="qwen3-4b"
-        ["Qwen/Qwen3-1.7B"]="qwen3-1.7b"
-    )
-
-    # 遍历并下载模型
-    for model_id in "${!models[@]}"; do
-        local_name=${models[$model_id]}
-        target_dir="$MODEL_SAVE_PATH/$local_name"
-
-        echo "Downloading model: $model_id to $target_dir"
-
-        # 检查目录是否存在，并据此决定是克隆还是更新
-        if [ -d "$target_dir" ]; then
-            echo "Directory $target_dir already exists. Checking for completeness..."
-            # 进入目录并使用 git lfs pull 来下载任何缺失的大文件
-            # 这可以修复中断的下载并显示进度
-            (cd "$target_dir" && git lfs pull)
-            echo "Model $model_id is now complete."
-        else
-            echo "Cloning new model: $model_id..."
-            # 1. 先克隆仓库结构，跳过LFS大文件，速度很快
-            GIT_LFS_SKIP_SMUDGE=1 git clone "https://hf-mirror.com/$model_id" "$target_dir"
-            # 2. 进入目录，再用 git lfs pull 拉取所有大文件，会显示进度条
-            (cd "$target_dir" && git lfs pull)
-            echo "Model $model_id downloaded successfully."
-        fi
-    done
-
 else
-    # --- MODELSCOPE 下载逻辑 ---
+    DOWNLOAD_SOURCE="modelscope"
     echo "Source: ModelScope selected."
-
-    # 3a. 定义 ModelScope 模型列表
-    MODEL_LIST="LLM-Research/Meta-Llama-3.1-8B-Instruct deepseek-ai/DeepSeek-R1-Distill-Llama-8B Qwen/Qwen3-8B"
-    # 您可以添加更多模型，用空格隔开:
-    # MODEL_LIST="model1 model2 model3"
-
-    for model_id in $MODEL_LIST; do
-        echo "--- Preparing to download model: $model_id ---"
-        
-        python3 download_model.py "$model_id" "$MODEL_SAVE_PATH"
-        
-        if [ $? -ne 0 ]; then
-            echo "Failed to download $model_id. See error above."
-        fi
-    done
 fi
+
+# Seven-model target set: existing 8B + new 1.5B/13B-tier models
+declare -A MODEL_TARGETS
+MODEL_TARGETS=(
+    ["LLM-Research/Meta-Llama-3.1-8B-Instruct"]="$MODEL_SAVE_PATH/LLM-Research/Meta-Llama-3.1-8B-Instruct"
+    ["deepseek-ai/DeepSeek-R1-Distill-Llama-8B"]="$MODEL_SAVE_PATH/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    ["Qwen/Qwen3-8B"]="$MODEL_SAVE_PATH/Qwen/Qwen3-8B"
+    ["deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"]="$MODEL_SAVE_PATH/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    ["Qwen/Qwen2.5-1.5B-Instruct"]="$MODEL_SAVE_PATH/Qwen/Qwen2.5-1.5B-Instruct"
+    ["NousResearch/Llama-2-13b-chat-hf"]="$MODEL_SAVE_PATH/LLM-Research/Llama-2-13b-chat-hf"
+    ["Qwen/Qwen-14B-Chat"]="$MODEL_SAVE_PATH/Qwen/Qwen-14B-Chat"
+)
+
+retry_download() {
+    local model_id="$1"
+    local target_dir="$2"
+    local attempts=0
+    local max_attempts=3
+    while [ $attempts -lt $max_attempts ]; do
+        attempts=$((attempts + 1))
+        echo "[$attempts/$max_attempts] Downloading $model_id -> $target_dir"
+
+        mkdir -p "$target_dir"
+
+        if [ "$DOWNLOAD_SOURCE" == "huggingface" ]; then
+            huggingface-cli download "$model_id" \
+                --local-dir "$target_dir" \
+                --resume-download
+        else
+            python3 download_model.py "$model_id" "$target_dir" "modelscope"
+        fi
+
+        if [ $? -eq 0 ]; then
+            return 0
+        fi
+        echo "Download failed for $model_id, retrying..."
+        sleep 3
+    done
+    return 1
+}
+
+for model_id in "${!MODEL_TARGETS[@]}"; do
+    target_dir="${MODEL_TARGETS[$model_id]}"
+    if retry_download "$model_id" "$target_dir"; then
+        echo "Downloaded: $model_id"
+    else
+        echo "Failed after retries: $model_id"
+    fi
+done
 
 
 

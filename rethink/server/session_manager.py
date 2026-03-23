@@ -28,10 +28,10 @@ def load_model_and_tokenizer(model_name_or_path):
     elif "Qwen3ForCausalLM" in architectures and RethinkQwen3ForCausalLM is not None:
         model_class = RethinkQwen3ForCausalLM
     else:
-        # Fallback or error? For now let's default to AutoModel but that won't have our instrumentation
-        # Or maybe we should raise an error if we want to enforce instrumentation
-        print(f"Warning: Architecture {architectures} not explicitly supported for instrumentation. Trying Llama fallback.")
-        model_class = RethinkLlamaForCausalLM
+        raise ValueError(
+            f"Unsupported architecture for Rethink instrumentation: {architectures}. "
+            "Supported architectures: LlamaForCausalLM, Qwen2ForCausalLM, Qwen3ForCausalLM."
+        )
 
     print(f"Selected model class: {model_class.__name__}")
 

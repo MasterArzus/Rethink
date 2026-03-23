@@ -1,21 +1,43 @@
 import sys
-from modelscope.hub.snapshot_download import snapshot_download
+from pathlib import Path
 
-def download_model(model_id, save_path):
+try:
+    from huggingface_hub import snapshot_download as hf_snapshot_download
+except Exception:
+    hf_snapshot_download = None
+
+try:
+    from modelscope.hub.snapshot_download import snapshot_download as ms_snapshot_download
+except Exception:
+    ms_snapshot_download = None
+
+def download_model(model_id, save_path, source="huggingface"):
     """
-    使用 modelscope 的 snapshot_download 函数下载模型。
-    这个函数会自动处理缓存、显示进度并支持断点续传。
+    Download model to a deterministic local directory.
     """
+    save_path = str(Path(save_path).expanduser())
     print(f"--- Starting download for model: {model_id} ---")
     print(f"Target directory: {save_path}")
-    
+
     try:
-        # cache_dir 指定了顶层缓存目录，模型会下载到其下的一个子目录中
-        local_model_path = snapshot_download(
-            model_id,
-            cache_dir=save_path,
-            # revision="master"  # 可以指定模型版本，默认为最新
-        )
+        if source == "modelscope":
+            if ms_snapshot_download is None:
+                raise RuntimeError("modelscope is not installed")
+            local_model_path = ms_snapshot_download(
+                model_id,
+                local_dir=save_path,
+                local_files_only=False,
+            )
+        else:
+            if hf_snapshot_download is None:
+                raise RuntimeError("huggingface_hub is not installed")
+            local_model_path = hf_snapshot_download(
+                repo_id=model_id,
+                local_dir=save_path,
+                local_dir_use_symlinks=False,
+                resume_download=True,
+            )
+
         print(f"--- Model downloaded successfully to: {local_model_path} ---")
         return True
     except Exception as e:
@@ -23,12 +45,13 @@ def download_model(model_id, save_path):
         return False
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python3 download_model.py <model_id> <save_path>")
+    if len(sys.argv) not in (3, 4):
+        print("Usage: python3 download_model.py <model_id> <save_path> [huggingface|modelscope]")
         sys.exit(1)
 
     model_id_to_download = sys.argv[1]
     path_to_save = sys.argv[2]
+    source_name = sys.argv[3] if len(sys.argv) == 4 else "huggingface"
 
-    if not download_model(model_id_to_download, path_to_save):
+    if not download_model(model_id_to_download, path_to_save, source=source_name):
         sys.exit(1)
