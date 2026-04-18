@@ -26,6 +26,8 @@ class TaskState:
     task_start_timestamp: str = field(default_factory=_utc_now_iso)
     last_event_timestamp: str = field(default_factory=_utc_now_iso)
     task_end_timestamp: Optional[str] = None
+    generation_started_at: Optional[str] = None  # G1: start marker for gen_time_s tracking
+    generation_time_seconds: float = 0.0  # G2: accumulated generation duration
     success: Optional[bool] = None
     failure_reason: Optional[str] = None
     final_checker_message: Optional[str] = None
@@ -133,7 +135,8 @@ class ExperimentLogger:
             task.trace_id = trace_id
         task.total_action_count += 1
 
-        if event_type in {"token_selected", "truncate_clicked", "force_retry_clicked"}:
+        if event_type in {"token_selected", "truncate_clicked", "force_retry_clicked",
+                           "sos_highlight_opened", "logit_lens_opened", "explanation_opened"}:
             task.total_clicks += 1
         if event_type == "probe_requested":
             task.total_probes += 1
@@ -163,6 +166,13 @@ class ExperimentLogger:
         self._append_jsonl(self.events_path, record)
         return record
 
+    def start_generation(self) -> None:
+        """G1: Mark the start of a generation call for gen_time_s tracking."""
+        if not self.active_task:
+            return
+        self.active_task.generation_started_at = _utc_now_iso()
+        self.log_event("generation_started")
+
     def record_generation(
         self,
         generated_tokens: int,
@@ -182,9 +192,17 @@ class ExperimentLogger:
             task.number_of_correction_generate_calls += 1
             task.correction_tokens += int(generated_tokens)
 
+        # G1/G2: compute and accumulate generation duration
+        duration = 0.0
+        if task.generation_started_at:
+            duration = self._seconds_since(task.generation_started_at, _utc_now_iso())
+            task.generation_time_seconds += duration
+            task.generation_started_at = None
+
         record_metadata = {
             "generated_tokens": int(generated_tokens),
             "is_correction": bool(is_correction),
+            "generation_duration_seconds": duration,
         }
         if metadata:
             record_metadata.update(metadata)
@@ -251,6 +269,7 @@ class ExperimentLogger:
             "task_start_timestamp": task.task_start_timestamp,
             "task_end_timestamp": task.task_end_timestamp,
             "wall_clock_seconds": self._seconds_since(task.task_start_timestamp, task.task_end_timestamp),
+            "generation_time_seconds": task.generation_time_seconds,  # G2
             "success": task.success,
             "number_of_generate_calls": task.number_of_generate_calls,
             "number_of_correction_generate_calls": task.number_of_correction_generate_calls,

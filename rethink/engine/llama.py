@@ -118,17 +118,26 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
         # Setup Logits Processors
         from transformers import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper, RepetitionPenaltyLogitsProcessor
         
+        temperature = generation_kwargs.get("temperature", 1.0)
+        top_k = generation_kwargs.get("top_k", 0)
+        top_p = generation_kwargs.get("top_p", 1.0)
+        repetition_penalty = generation_kwargs.get("repetition_penalty", 1.0)
+        temperature = 1.0 if temperature is None else float(temperature)
+        top_k = 0 if top_k is None else int(top_k)
+        top_p = 1.0 if top_p is None else float(top_p)
+        repetition_penalty = 1.0 if repetition_penalty is None else float(repetition_penalty)
+
         logits_processor = LogitsProcessorList()
-        if generation_kwargs.get("repetition_penalty", 1.0) != 1.0:
-            logits_processor.append(RepetitionPenaltyLogitsProcessor(penalty=generation_kwargs["repetition_penalty"]))
+        if repetition_penalty != 1.0:
+            logits_processor.append(RepetitionPenaltyLogitsProcessor(penalty=repetition_penalty))
         
         logits_warper = LogitsProcessorList()
-        if generation_kwargs.get("temperature", 1.0) != 1.0:
-            logits_warper.append(TemperatureLogitsWarper(temperature=generation_kwargs["temperature"]))
-        if generation_kwargs.get("top_k", 0) > 0:
-            logits_warper.append(TopKLogitsWarper(top_k=generation_kwargs["top_k"]))
-        if generation_kwargs.get("top_p", 1.0) < 1.0:
-            logits_warper.append(TopPLogitsWarper(top_p=generation_kwargs["top_p"]))
+        if temperature != 1.0:
+            logits_warper.append(TemperatureLogitsWarper(temperature=temperature))
+        if top_k > 0:
+            logits_warper.append(TopKLogitsWarper(top_k=top_k))
+        if top_p < 1.0:
+            logits_warper.append(TopPLogitsWarper(top_p=top_p))
 
         recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
         ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
@@ -155,9 +164,26 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                 
                 # Apply warpers (sampling)
                 next_token_scores = logits_warper(generated_ids, next_token_logits)
-                
-                probs = torch.nn.functional.softmax(next_token_scores, dim=-1)
-                
+
+                # Numerical guardrails: some configs/models can yield NaN/Inf scores
+                # after warpers, which would crash multinomial on CUDA.
+                safe_scores = torch.nan_to_num(
+                    next_token_scores.float(),
+                    nan=-1e9,
+                    posinf=1e9,
+                    neginf=-1e9,
+                )
+                probs = torch.nn.functional.softmax(safe_scores, dim=-1)
+                probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
+
+                row_sums = probs.sum(dim=-1, keepdim=True)
+                invalid_rows = row_sums.squeeze(-1) <= 0
+                if torch.any(invalid_rows):
+                    # Fallback to argmax over safe scores when distribution collapses.
+                    probs[invalid_rows] = 0.0
+                    fallback_ids = torch.argmax(safe_scores[invalid_rows], dim=-1, keepdim=True)
+                    probs[invalid_rows].scatter_(1, fallback_ids, 1.0)
+
                 if generation_kwargs.get("do_sample", True):
                     next_token = torch.multinomial(probs, num_samples=1)
                 else:
@@ -197,7 +223,7 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
                         step=step,
                         token=token_str,
                         prob=probs[0, token_id].item(),
-                        log_prob=torch.log(probs[0, token_id]).item(),
+                        log_prob=torch.log(torch.clamp(probs[0, token_id], min=1e-12)).item(),
                         hidden_states=current_states,
                     )
                 )

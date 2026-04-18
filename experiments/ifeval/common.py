@@ -13,7 +13,7 @@ MODELS = {
     "deepseek_r1_qwen_1_5b": "/root/autodl-fs/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
     "qwen2_5_1_5b": "/root/autodl-fs/Qwen/Qwen2.5-1.5B-Instruct",
     "llama2_13b_chat": "/root/autodl-fs/LLM-Research/Llama-2-13b-chat-hf",
-    "qwen_14b_chat": "/root/autodl-fs/Qwen/Qwen-14B-Chat",
+    "qwen2_5_14b_instruct": "/root/autodl-fs/Qwen/Qwen2.5-14B-Instruct",
 }
 
 DEFAULT_DATASET_PATH = "/root/Rethink/dataset/ifeval/taskset_60_hard.json"

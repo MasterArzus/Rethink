@@ -61,6 +61,11 @@ class InteractiveSession:
             return self.experiment_logger.finish_task(**kwargs)
         return None
 
+    def start_generation(self) -> None:
+        """Mark the start of a generation call for gen_time_s tracking."""
+        if self.experiment_logger:
+            self.experiment_logger.start_generation()
+
     def save_session(self, filename=None):
         """
         Save the current trace and analysis to a JSON file.
