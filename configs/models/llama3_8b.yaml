@@ -1,6 +1,15 @@
-# Model specific configuration
 model_name_or_path: /root/autodl-fs/LLM-Research/Meta-Llama-3.1-8B-Instruct
 device_map: auto
 torch_dtype: float16
 attn_implementation: eager
 reference_layer_idx: 20
+# Generation params for Llama 8B - balanced settings
+generation:
+  temperature: 0.4
+  top_p: 0.7
+  top_k: 40
+  repetition_penalty: 1.05
+  max_new_tokens: 1024
+  no_repeat_ngram_size: 2
+  early_stopping: true
+  do_sample: true

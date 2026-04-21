@@ -247,6 +247,37 @@ class TraceAnalysis:
             token_metrics=token_metrics
         )
 
+    def compute_sos_scores(self, start_idx: int = 0, end_idx: int = None) -> List[float]:
+        """
+        Compute SOS (Steering Opportunity Score) for tokens in the trace.
+
+        Args:
+            start_idx: Start index for computation (for incremental updates after rethink)
+            end_idx: End index (exclusive). None means to end of trace.
+
+        Returns:
+            List of float SOS scores, one per token, in [0, 1].
+        """
+        if end_idx is None:
+            end_idx = len(self.trace.tokenlist)
+
+        scores = [0.0] * start_idx  # Pre-fill with zeros for unchanged tokens
+
+        for i in range(start_idx, end_idx):
+            token_rec = self.trace.tokenlist[i]
+            layers = sorted(token_rec.hidden_states.keys())
+            if len(layers) < 2:
+                scores.append(0.0)
+                continue
+
+            reference_layer = layers[-1]
+            mid_layer = layers[len(layers) // 2]
+
+            token_analyzer = TokenAnalysis(token_rec, self.model, self.tokenizer)
+            sos = token_analyzer.compute_sos_metric(mid_layer, reference_layer)
+            scores.append(max(0.0, sos))
+        return scores
+
     def get_token_alternatives(self, token_index: int, k: int = 5) -> Dict[str, Any]:
         """
         Get the top-k alternative tokens for a specific position.

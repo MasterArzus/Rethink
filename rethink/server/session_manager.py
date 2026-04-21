@@ -87,15 +87,31 @@ def load_model_and_tokenizer(
 
     # Load the model directly using our instrumented class
     # This ensures the config is passed correctly and the model is initialized properly
-    # We use attn_implementation="eager" to ensure output_attentions=True works for visualization
+    # Note: Rethink wrapper classes don't support attn_implementation parameter
     resolved_dtype = _resolve_torch_dtype(torch_dtype_name)
-    model = model_class.from_pretrained(
-        model_name_or_path,
-        torch_dtype=resolved_dtype,
-        device_map=device_map,
-        attn_implementation=attn_implementation,
-        trust_remote_code=True
+
+    # Check if this is a Rethink wrapper class
+    is_rethink_wrapper = (
+        model_class.__name__.startswith("Rethink") or
+        "Rethink" in model_class.__name__
     )
+
+    if is_rethink_wrapper:
+        # Rethink wrappers don't support attn_implementation
+        model = model_class.from_pretrained(
+            model_name_or_path,
+            torch_dtype=resolved_dtype,
+            device_map=device_map,
+            trust_remote_code=True
+        )
+    else:
+        model = model_class.from_pretrained(
+            model_name_or_path,
+            torch_dtype=resolved_dtype,
+            device_map=device_map,
+            attn_implementation=attn_implementation,
+            trust_remote_code=True
+        )
     
     print("Model loaded successfully.")
     return model, tokenizer

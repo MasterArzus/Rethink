@@ -2,26 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
 import torch
 from transformers.models.llama.modeling_llama import LlamaForCausalLM
 
+from rethink.engine.base import TracePack
 from rethink.utils.config import InstrumentationConfig
 from rethink.recorder.hiddenstate_recorder import HiddenStateRecorder, HiddenState
 from rethink.recorder.token_recorder import TokenRecorder
-
-
-
-@dataclass
-class TracePack:
-
-    """Aggregate token-wise statistics and raw hidden states."""
-
-    token_logprobs: List[TokenRecorder]
-    hidden_states: Dict[int, List[torch.Tensor]]
-    extra: Dict[str, torch.Tensor]
 
 
 class RethinkLlamaForCausalLM(LlamaForCausalLM):
@@ -108,137 +97,142 @@ class RethinkLlamaForCausalLM(LlamaForCausalLM):
         generation_kwargs: Optional[dict] = None,
         stream_callback: Optional[Any] = None,
     ) -> TracePack:
-        """Run open-ended decoding while storing statistics for each emitted token."""
+        """
+        Run generation and record trace.
 
+        Strategy:
+        - Use model.generate() for correct, reliable generation
+        - Re-run step-by-step only if hidden state tracking is needed
+        - Otherwise, just decode tokens efficiently
+        """
         generation_kwargs = generation_kwargs or {"max_new_tokens": 128}
         device = self.device
-        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+
+        # Prepare input
+        if isinstance(prompt, str):
+            input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+        else:
+            input_ids = prompt
+
+        input_len = input_ids.shape[1]
+        max_new_tokens = generation_kwargs.get("max_new_tokens", 128)
+
+        # Decide whether to track hidden states
+        track_hidden = self.instrumentation_cfg.track_hidden_states
+
+        # Use model.generate() for generation - this ensures correct behavior
+        # Pass output_hidden_states only if we need it
+        # Filter out model-specific kwargs that generate() doesn't support
+        filtered_kwargs = {
+            k: v for k, v in generation_kwargs.items()
+            if k not in ["max_new_tokens", "frequency_penalty", "presence_penalty"]
+        }
+        gen_output = self.generate(
+            input_ids,
+            max_new_tokens=max_new_tokens,
+            output_hidden_states=track_hidden,
+            return_dict_in_generate=True,
+            **filtered_kwargs,
+        )
+
+        # Extract generated token IDs
+        if hasattr(gen_output, "sequences"):
+            generated_ids = gen_output.sequences[0][input_len:]
+        else:
+            generated_ids = gen_output[0][input_len:]
+
         token_logs: List[TokenRecorder] = []
 
-        # Setup Logits Processors
-        from transformers import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper, RepetitionPenaltyLogitsProcessor
-        
-        temperature = generation_kwargs.get("temperature", 1.0)
-        top_k = generation_kwargs.get("top_k", 0)
-        top_p = generation_kwargs.get("top_p", 1.0)
-        repetition_penalty = generation_kwargs.get("repetition_penalty", 1.0)
-        temperature = 1.0 if temperature is None else float(temperature)
-        top_k = 0 if top_k is None else int(top_k)
-        top_p = 1.0 if top_p is None else float(top_p)
-        repetition_penalty = 1.0 if repetition_penalty is None else float(repetition_penalty)
+        if track_hidden and hasattr(gen_output, "hidden_states"):
+            # Re-run step-by-step to record hidden states properly
+            past_kv = None
+            cumulative_ids = input_ids
 
-        logits_processor = LogitsProcessorList()
-        if repetition_penalty != 1.0:
-            logits_processor.append(RepetitionPenaltyLogitsProcessor(penalty=repetition_penalty))
-        
-        logits_warper = LogitsProcessorList()
-        if temperature != 1.0:
-            logits_warper.append(TemperatureLogitsWarper(temperature=temperature))
-        if top_k > 0:
-            logits_warper.append(TopKLogitsWarper(top_k=top_k))
-        if top_p < 1.0:
-            logits_warper.append(TopPLogitsWarper(top_p=top_p))
+            for step, token_id in enumerate(generated_ids):
+                input_t = token_id.unsqueeze(0).unsqueeze(0).to(device)
 
-        recorder_ctx = self._recorder.attach(self) if self.instrumentation_cfg.track_hidden_states else None
-        ctx_manager = recorder_ctx if recorder_ctx is not None else torch.no_grad()
-
-        with ctx_manager:
-            past_key_values = None
-            generated_ids = input_ids
-            curr_input_ids = input_ids
-            prev_text = tokenizer.decode(generated_ids[0].tolist())
-
-            for step in range(generation_kwargs.get("max_new_tokens", 128)):
-                outputs = super().forward(
-                    input_ids=curr_input_ids,
+                outputs = self.forward(
+                    input_ids=input_t,
+                    past_key_values=past_kv,
                     use_cache=True,
-                    past_key_values=past_key_values,
-                    return_dict=True,
-                    output_attentions=self.instrumentation_cfg.track_attentions,
+                    output_hidden_states=True,
                 )
-                next_token_logits = outputs.logits[:, -1, :]
-                past_key_values = outputs.past_key_values
-                
-                # Apply processors (repetition penalty, etc)
-                next_token_logits = logits_processor(generated_ids, next_token_logits)
-                
-                # Apply warpers (sampling)
-                next_token_scores = logits_warper(generated_ids, next_token_logits)
 
-                # Numerical guardrails: some configs/models can yield NaN/Inf scores
-                # after warpers, which would crash multinomial on CUDA.
-                safe_scores = torch.nan_to_num(
-                    next_token_scores.float(),
-                    nan=-1e9,
-                    posinf=1e9,
-                    neginf=-1e9,
-                )
-                probs = torch.nn.functional.softmax(safe_scores, dim=-1)
-                probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
-
-                row_sums = probs.sum(dim=-1, keepdim=True)
-                invalid_rows = row_sums.squeeze(-1) <= 0
-                if torch.any(invalid_rows):
-                    # Fallback to argmax over safe scores when distribution collapses.
-                    probs[invalid_rows] = 0.0
-                    fallback_ids = torch.argmax(safe_scores[invalid_rows], dim=-1, keepdim=True)
-                    probs[invalid_rows].scatter_(1, fallback_ids, 1.0)
-
-                if generation_kwargs.get("do_sample", True):
-                    next_token = torch.multinomial(probs, num_samples=1)
+                # Get hidden states for this step
+                if hasattr(outputs, "hidden_states") and outputs.hidden_states:
+                    current_states = {}
+                    for layer_idx, hidden_state in enumerate(outputs.hidden_states):
+                        if hidden_state is not None:
+                            current_states[layer_idx] = HiddenState(
+                                layer_idx=layer_idx,
+                                value=hidden_state[0, -1].cpu()
+                            )
                 else:
-                    next_token = torch.argmax(probs, dim=-1).unsqueeze(-1)
-                
-                token_id = next_token.item()
-                
-                # Extract hidden states for this step
-                current_states = {}
-                if self.instrumentation_cfg.track_hidden_states and self._recorder.storage:
-                    for l, states in self._recorder.storage.items():
-                        if states:
-                            # states is now List[HiddenState]
-                            current_states[l] = states[-1]
+                    current_states = {}
 
-                generated_ids = torch.cat([generated_ids, next_token.to(device)], dim=-1)
-                curr_input_ids = next_token.to(device)
+                # Compute log prob for this token
+                logits = outputs.logits[0, -1, :]
+                probs = torch.nn.functional.softmax(logits.float(), dim=-1)
+                token_prob = probs[token_id].item()
 
-                full_text = tokenizer.decode(
-                    generated_ids[0].tolist(),
-                    skip_special_tokens=False,
-                    clean_up_tokenization_spaces=False,
-                    errors="ignore",
+                token_str = tokenizer.decode([token_id], skip_special_tokens=False).replace("\uFFFD", "")
+
+                token_logs.append(TokenRecorder(
+                    idx=token_id.item() if hasattr(token_id, "item") else int(token_id),
+                    step=step,
+                    token=token_str,
+                    prob=token_prob,
+                    log_prob=torch.log(torch.tensor(token_prob)).item(),
+                    hidden_states=current_states if track_hidden else {},
+                    input_ids=cumulative_ids.cpu(),
+                ))
+
+                cumulative_ids = torch.cat([cumulative_ids, token_id.unsqueeze(0).unsqueeze(0)], dim=-1)
+                past_kv = outputs.past_key_values
+
+                if stream_callback:
+                    stream_callback(token_str)
+        else:
+            # Decode tokens and compute probs via forward pass
+            past_kv = None
+            cumulative_ids = input_ids
+
+            for step, token_id in enumerate(generated_ids):
+                input_t = token_id.unsqueeze(0).unsqueeze(0).to(device)
+
+                outputs = self.forward(
+                    input_ids=input_t,
+                    past_key_values=past_kv,
+                    use_cache=True,
                 )
-                if full_text.startswith(prev_text):
-                    token_str = full_text[len(prev_text):]
-                else:
-                    token_str = tokenizer.decode([token_id])
-                token_str = token_str.replace("\uFFFD", "")
-                prev_text = full_text
+
+                # Compute probability for this token from logits
+                logits = outputs.logits[0, -1, :]
+                probs = torch.nn.functional.softmax(logits.float(), dim=-1)
+                token_prob = probs[token_id.item() if hasattr(token_id, "item") else token_id].item()
+                token_log_prob = torch.log(torch.clamp(torch.tensor(token_prob), min=1e-12)).item()
+
+                token_str = tokenizer.decode([token_id], skip_special_tokens=False).replace("\uFFFD", "")
+
+                token_logs.append(TokenRecorder(
+                    idx=token_id.item() if hasattr(token_id, "item") else int(token_id),
+                    step=step,
+                    token=token_str,
+                    prob=token_prob,
+                    log_prob=token_log_prob,
+                    hidden_states={},
+                    input_ids=cumulative_ids.cpu(),
+                ))
+
+                cumulative_ids = torch.cat([cumulative_ids, token_id.unsqueeze(0).unsqueeze(0)], dim=-1)
+                past_kv = outputs.past_key_values
+
                 if stream_callback:
                     stream_callback(token_str)
 
-                token_logs.append(
-                    TokenRecorder(
-                        idx=token_id,
-                        step=step,
-                        token=token_str,
-                        prob=probs[0, token_id].item(),
-                        log_prob=torch.log(torch.clamp(probs[0, token_id], min=1e-12)).item(),
-                        hidden_states=current_states,
-                    )
-                )
-                
-                # Check for stop conditions
-                eos_token_id = generation_kwargs.get("eos_token_id")
-                if eos_token_id is not None:
-                    if isinstance(eos_token_id, int) and token_id == eos_token_id:
-                        break
-                    elif isinstance(eos_token_id, (list, tuple)) and token_id in eos_token_id:
-                        break
-
         return TracePack(
             token_logprobs=token_logs,
-            hidden_states=dict(self._recorder.storage) if self.instrumentation_cfg.track_hidden_states else {},
+            hidden_states=dict(self._recorder.storage) if track_hidden else {},
             extra={"prompt_ids": input_ids.cpu()},
         )
 

@@ -161,24 +161,28 @@ def render_token_stream_inline(token_data, selected_idx):
         is_new = item.get('is_new', False)
         is_selected = (idx == selected_idx)
 
-        # Calculate SOS level (0-7 scale based on probability distribution)
-        # Lower prob = higher SOS (more uncertainty)
-        if prob > 0.3:
-            sos_level = 0
-        elif prob > 0.15:
-            sos_level = 1
-        elif prob > 0.08:
-            sos_level = 2
-        elif prob > 0.04:
-            sos_level = 3
-        elif prob > 0.02:
-            sos_level = 4
-        elif prob > 0.01:
-            sos_level = 5
-        elif prob > 0.005:
-            sos_level = 6
+        # Use real SOS score if available, otherwise fall back to prob-based estimate
+        sos_score = item.get('sos_score')
+        if sos_score is not None:
+            sos_level = int(min(7, sos_score * 7))
         else:
-            sos_level = 7
+            # Fallback: prob-based proxy (deprecated)
+            if prob > 0.3:
+                sos_level = 0
+            elif prob > 0.15:
+                sos_level = 1
+            elif prob > 0.08:
+                sos_level = 2
+            elif prob > 0.04:
+                sos_level = 3
+            elif prob > 0.02:
+                sos_level = 4
+            elif prob > 0.01:
+                sos_level = 5
+            elif prob > 0.005:
+                sos_level = 6
+            else:
+                sos_level = 7
 
         # Escape HTML
         safe_token = token_text.replace("<", "&lt;").replace(">", "&gt;")

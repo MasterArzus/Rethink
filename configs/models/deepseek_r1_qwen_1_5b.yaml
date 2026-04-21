@@ -3,3 +3,11 @@ device_map: auto
 torch_dtype: float16
 attn_implementation: eager
 reference_layer_idx: 12
+# Optimized generation params for small model - use greedy to avoid gibberish
+generation:
+  temperature: 0.0
+  top_p: 1.0
+  top_k: 0
+  repetition_penalty: 1.5
+  max_new_tokens: 512
+  do_sample: false

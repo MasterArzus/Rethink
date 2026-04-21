@@ -39,12 +39,51 @@ def load_yaml(path):
         return yaml.safe_load(f)
 
 
+def reset_metrics():
+    """Reset all interaction metrics to initial state."""
+    st.session_state['total_tokens_used'] = 0
+    st.session_state['interaction_turns'] = 0
+    st.session_state['correction_tokens'] = 0
+    st.session_state['correction_turns'] = 0
+    st.session_state['total_clicks'] = 0
+    st.session_state['total_probes'] = 0
+    st.session_state['total_branch_actions'] = 0
+
+
 def strip_think_content(text):
-    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    trailing_open = cleaned.find("<think>")
-    if trailing_open != -1:
-        cleaned = cleaned[:trailing_open]
-    return cleaned
+    """Remove think/analysis content from text, handling nested tags."""
+    # Try multiple think tag formats
+    think_patterns = [
+        ("<think>", "</think>"),      # Standard format
+        ("<｜think｜>", "<｜/think｜>"),  # Qwen/DeepSeek format
+        ("<THINK>", "</THINK>"),     # Uppercase format
+    ]
+
+    for open_tag, close_tag in think_patterns:
+        cleaned = text
+        # Iteratively remove nested tags until no more found
+        while True:
+            start = cleaned.find(open_tag)
+            if start == -1:
+                break
+            # Find the matching close tag after this open tag
+            end = cleaned.find(close_tag, start + len(open_tag))
+            if end == -1:
+                # No matching close tag, remove everything from open_tag onwards
+                cleaned = cleaned[:start]
+                break
+            else:
+                # Remove the think block
+                cleaned = cleaned[:start] + cleaned[end + len(close_tag):]
+        text = cleaned
+
+    # Also remove any trailing think tags that weren't closed
+    for open_tag, _ in think_patterns:
+        trailing_open = text.find(open_tag)
+        if trailing_open != -1:
+            text = text[:trailing_open]
+
+    return text.strip()
 
 
 def model_config_sort_key(filename):
@@ -213,13 +252,16 @@ with st.sidebar.expander("🧪 实验设置", expanded=True):
     # Remember selection
     st.session_state['default_model_config'] = selected_model_config_file
 
-    # Load model config
+# Load model config
     model_cfg_path = model_configs[selected_model_config_file]
     model_cfg_data = load_yaml(model_cfg_path) or {}
     model_cfg_data.setdefault("device_map", "auto")
     model_cfg_data.setdefault("torch_dtype", "float16")
     model_cfg_data.setdefault("attn_implementation", "eager")
     model_path = str(model_cfg_data.get("model_name_or_path", "") or "").strip()
+
+    # Extract model-specific generation params if present
+    model_generation_cfg = model_cfg_data.get("generation", {})
 
     # Model path validation
     if model_path and os.path.exists(model_path):
@@ -297,11 +339,7 @@ with st.sidebar.expander("📋 任务选择", expanded=True):
                         },
                     )
 
-                    st.session_state['total_tokens_used'] = 0
-                    st.session_state['interaction_turns'] = 0
-                    st.session_state['correction_tokens'] = 0
-                    st.session_state['correction_turns'] = 0
-
+                    reset_metrics()
                     st.rerun()
 
                 with st.expander("Preview Task"):
@@ -344,12 +382,7 @@ with st.sidebar.expander("📋 任务选择", expanded=True):
                         st.session_state.pop('trace', None)
                         st.session_state.pop('analysis', None)
                         st.session_state['user_input_area'] = question
-
-                        st.session_state['total_tokens_used'] = 0
-                        st.session_state['interaction_turns'] = 0
-                        st.session_state['correction_tokens'] = 0
-                        st.session_state['correction_turns'] = 0
-
+                        reset_metrics()
                         st.session_state.pop('last_ifeval_selection', None)
                         st.session_state.pop('current_constraints', None)
                         st.session_state.pop('current_task_type', None)
@@ -412,11 +445,7 @@ with st.sidebar.expander("📋 任务选择", expanded=True):
                         metadata={"example_index": int(example_idx)},
                     )
 
-                    st.session_state['total_tokens_used'] = 0
-                    st.session_state['interaction_turns'] = 0
-                    st.session_state['correction_tokens'] = 0
-                    st.session_state['correction_turns'] = 0
-
+                    reset_metrics()
                     st.rerun()
             else:
                 st.error("Dataset path not found")
@@ -427,18 +456,32 @@ with st.sidebar.expander("📋 任务选择", expanded=True):
 # ============================================================================
 # Section 3: Generation Parameters (Collapsible)
 # ============================================================================
+# Start with model-specific config if available, otherwise default
+if model_generation_cfg:
+    default_gen_cfg = model_generation_cfg.copy()
+    default_preset = "Model Default"
+else:
+    default_gen_cfg = GenerationConfig().to_dict()
+    default_preset = "Default"
+
 with st.sidebar.expander("⚙️ 生成参数", expanded=False):
     gen_configs = load_config_files("generation")
+    gen_preset_options = list(gen_configs.keys()) + [default_preset]
+    default_idx = len(gen_preset_options) - 1  # "Default" or "Model Default" at end
+
     selected_gen_config_file = st.selectbox(
         "Preset",
-        options=list(gen_configs.keys()) + ["Default"]
+        options=gen_preset_options,
+        index=default_idx
     )
 
-    if selected_gen_config_file != "Default":
+    if selected_gen_config_file == "Model Default" and model_generation_cfg:
+        gen_cfg_data = model_generation_cfg.copy()
+    elif selected_gen_config_file == "Default":
+        gen_cfg_data = GenerationConfig().to_dict()
+    else:
         gen_cfg_path = gen_configs[selected_gen_config_file]
         gen_cfg_data = load_yaml(gen_cfg_path)
-    else:
-        gen_cfg_data = GenerationConfig().to_dict()
 
     # Core parameters
     temperature = st.slider("Temperature", 0.0, 2.0, float(gen_cfg_data.get("temperature", 0.4)), 0.1)
@@ -515,14 +558,7 @@ if st.session_state['logging_started']:
         st.metric("Probes", st.session_state.get('total_probes', 0))
 
     if st.sidebar.button("🔄 重置记录"):
-        # Reset all metrics
-        st.session_state['total_tokens_used'] = 0
-        st.session_state['interaction_turns'] = 0
-        st.session_state['correction_tokens'] = 0
-        st.session_state['correction_turns'] = 0
-        st.session_state['total_clicks'] = 0
-        st.session_state['total_probes'] = 0
-        st.session_state['total_branch_actions'] = 0
+        reset_metrics()
         st.rerun()
 
     if st.sidebar.button("⏹️ 停止记录"):
@@ -537,16 +573,7 @@ else:
         experiment_logger = ExperimentLogger(logging_cfg, participant_id=participant)
         st.session_state['experiment_logger'] = experiment_logger
         st.session_state['logging_started'] = True
-
-        # Reset metrics
-        st.session_state['total_tokens_used'] = 0
-        st.session_state['interaction_turns'] = 0
-        st.session_state['correction_tokens'] = 0
-        st.session_state['correction_turns'] = 0
-        st.session_state['total_clicks'] = 0
-        st.session_state['total_probes'] = 0
-        st.session_state['total_branch_actions'] = 0
-
+        reset_metrics()
         st.rerun()
 
 st.sidebar.caption("记录在 outputs/interactive_sessions/")
@@ -664,9 +691,8 @@ if 'model' in st.session_state:
                         except Exception as e:
                             st.warning(f"Could not run checker: {e}")
 
-                    if experiment_mode == "Rethink (Steering)":
-                        st.divider()
-                        st.caption("Interactive Steering Mode")
+                        if experiment_mode == "Rethink (Steering)":
+                            st.caption("Interactive Steering Mode")
                     
                         selected_idx = st.session_state.get('selected_token_index', 0)
                         token_data = []
@@ -683,10 +709,12 @@ if 'model' in st.session_state:
 
                             is_new = (rethink_start != -1 and idx >= rethink_start)
 
+                            sos_scores = st.session_state.get('sos_scores', [])
+                            sos_score = sos_scores[idx] if idx < len(sos_scores) else 0.0
                             token_data.append({
                                 "index": idx, "token": token.token, "prob": token.prob,
                                 "is_critical": is_critical, "reason": reason,
-                                "is_new": is_new
+                                "is_new": is_new, "sos_score": sos_score
                             })
 
                         html_content = render_token_stream(token_data, selected_idx)
@@ -711,7 +739,6 @@ if 'model' in st.session_state:
                         # =================================================================
                         # NEW: Two-Column Token Analysis Panel
                         # =================================================================
-                        st.divider()
                         if 0 <= selected_idx < len(token_data):
                             # Initialize components if needed
                             if 'analysis_obj' not in st.session_state:
@@ -730,7 +757,7 @@ if 'model' in st.session_state:
 
                             # === LEFT COLUMN: Layer Analysis ===
                             with col_left:
-                                st.markdown("### 🔬 层分析")
+                                st.caption("🔬 层分析")
 
                                 # Ensure Hidden States are computed
                                 if selected_idx not in hs_cache:
@@ -782,7 +809,7 @@ if 'model' in st.session_state:
 
                             # === RIGHT COLUMN: Quick Actions ===
                             with col_right:
-                                st.markdown("### 🔧 快速操作")
+                                st.caption("🔧 快速操作")
 
                                 # Steering prompt
                                 steering_prompt = st.text_input(
@@ -827,6 +854,10 @@ if 'model' in st.session_state:
 
                                             st.session_state['trace'] = new_trace
                                             st.session_state['analysis'] = new_analysis
+                                            # Compute SOS only for new tokens (from selected_idx onwards)
+                                            analyzer = TraceAnalysis(new_trace, session.controller.model, session.controller.tokenizer)
+                                            new_sos = analyzer.compute_sos_scores(start_idx=selected_idx)
+                                            st.session_state['sos_scores'] = new_sos
                                             st.session_state['selected_token_index'] = selected_idx
                                             st.session_state['rethink_start_index'] = selected_idx + 1
                                             st.session_state.messages[-1]["content"] = new_trace.get_full_text()
@@ -855,6 +886,10 @@ if 'model' in st.session_state:
 
                                                 st.session_state['trace'] = new_trace
                                                 st.session_state['analysis'] = new_analysis
+                                                # Compute SOS only for new tokens (from selected_idx onwards)
+                                                analyzer = TraceAnalysis(new_trace, session.controller.model, session.controller.tokenizer)
+                                                new_sos = analyzer.compute_sos_scores(start_idx=selected_idx)
+                                                st.session_state['sos_scores'] = new_sos
                                                 st.session_state['selected_token_index'] = selected_idx
                                                 st.session_state['rethink_start_index'] = selected_idx
                                                 st.session_state.messages[-1]["content"] = new_trace.get_full_text()
@@ -1080,16 +1115,16 @@ if 'model' in st.session_state:
                     display_response = strip_think_content(display_response).strip()
                 
                 live_stream_placeholder.markdown(display_response)
-
-                st.session_state['trace'] = trace
-                st.session_state['analysis'] = analysis
-                st.session_state['rethink_start_index'] = -1
+                from rethink.analysis.trace_analysis import TraceAnalysis
+                trace_analyzer = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
+                sos_scores = trace_analyzer.compute_sos_scores()
+                st.session_state['sos_scores'] = sos_scores
                 st.session_state['hidden_state_cache'] = {}
                 st.session_state['probe_cache'] = {}
                 st.session_state['selected_layer'] = None
                 st.session_state.pop('analysis_obj', None)
                 st.session_state['selected_token_index'] = 0
-            
+
                 st.session_state.messages.append({"role": "assistant", "content": display_response})
                 st.rerun()
 
