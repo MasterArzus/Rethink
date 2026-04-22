@@ -218,13 +218,28 @@ with st.sidebar.expander("🧪 实验设置", expanded=True):
     participant_id = st.text_input("Participant ID", value=st.session_state.get("participant_id", "pilot"))
     st.session_state["participant_id"] = participant_id
 
-    # Experiment Mode
+# Experiment Mode
     experiment_mode = st.radio(
         "Mode",
         ["Baseline (Chat)", "Rethink (Steering)"],
         key="experiment_mode",
         horizontal=True
     )
+
+# Log condition changes for within-session mode switches
+    prev_mode = st.session_state.get("_prev_experiment_mode")
+    if prev_mode is not None and prev_mode != experiment_mode:
+        session = st.session_state.get("interactive_session")
+        if session:
+            session.log_event(
+                "condition_changed",
+                metadata={
+                    "from_mode": prev_mode,
+                    "to_mode": experiment_mode,
+                    "at_task": st.session_state.get("current_task_context", {}).get("task_id"),
+                }
+            )
+    st.session_state["_prev_experiment_mode"] = experiment_mode
 
     # Model Selection
     model_configs = load_config_files("models")
@@ -843,6 +858,7 @@ if 'model' in st.session_state:
                                                 trace, selected_idx,
                                                 max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                                 steering_prompt=steering_prompt,
+                                                **gen_cfg_data,
                                             )
                                             tokens_gen = len(new_trace.tokenlist) - selected_idx
                                             st.session_state['total_tokens_used'] += tokens_gen
@@ -875,6 +891,7 @@ if 'model' in st.session_state:
                                                     max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                                     force_token=selected_alt_token,
                                                     steering_prompt=steering_prompt,
+                                                    **gen_cfg_data,
                                                 )
                                                 tokens_gen = len(new_trace.tokenlist) - selected_idx
                                                 st.session_state['total_tokens_used'] += tokens_gen
@@ -1084,9 +1101,10 @@ if 'model' in st.session_state:
                 session.start_generation()
                 trace, analysis = session.run_initial_inference(
                     full_prompt_str,
-                    use_template=False, # We already applied the template
+                    use_template=False,  # We already applied the template
                     max_new_tokens=max_new_tokens,
                     stream_callback=token_stream_callback,
+                    **gen_cfg_data,
                 )
 
                 # Update metrics

@@ -20,57 +20,57 @@
 
 ### DeepSeek-R1-Distill-Llama-8B
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.08 | 0.08 | 15.0 | 15.0 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 0.72 | 0.72 | 4.9 | 4.9 | N/A | N/A | N/A | 72.4 |
-| Regenerate | 0.37 | 0.50 | 45.4 | 45.4 | N/A | N/A | N/A | -224.5 |
-| Auto Local Repair | 0.12 | 0.23 | 39.9 | 39.9 | N/A | N/A | N/A | -143.1 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.08 | 0.08 | 15.0 | 15.0 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 0.72 | 0.72 | 4.9 | 4.9 | N/A | N/A | N/A | 72.4 | 1.00 |
+| Regenerate | 0.37 | 0.50 | 45.4 | 45.4 | N/A | N/A | N/A | -224.5 | 3.13 |
+| Auto Local Repair | 0.12 | 0.23 | 39.9 | 39.9 | N/A | N/A | N/A | -143.1 | 4.38 |
 
 ### Llama-3.1-8B
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.60 | 0.60 | 2.3 | 2.3 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 0.93 | 0.93 | 1.7 | 1.7 | N/A | N/A | N/A | 48.3 |
-| Regenerate | 0.60 | 0.95 | 4.9 | 4.9 | N/A | N/A | N/A | -98.8 |
-| Auto Local Repair | 0.62 | 0.97 | 13.9 | 13.9 | N/A | N/A | N/A | -36.6 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.60 | 0.60 | 2.3 | 2.3 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 0.93 | 0.93 | 1.7 | 1.7 | N/A | N/A | N/A | 48.3 | 1.00 |
+| Regenerate | 0.60 | 0.95 | 4.9 | 4.9 | N/A | N/A | N/A | -98.8 | 1.60 |
+| Auto Local Repair | 0.62 | 0.97 | 13.9 | 13.9 | N/A | N/A | N/A | -36.6 | 1.57 |
 
 ### Qwen3-8B
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.52 | 0.52 | 15.5 | 15.5 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 5.3 | 5.3 | N/A | N/A | N/A | 72.2 |
-| Regenerate | 0.40 | 0.77 | 21.1 | 21.1 | N/A | N/A | N/A | -150.5 |
-| Auto Local Repair | 0.60 | 0.92 | 26.2 | 26.2 | N/A | N/A | N/A | -2.2 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.52 | 0.52 | 15.5 | 15.5 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 1.00 | 1.00 | 5.3 | 5.3 | N/A | N/A | N/A | 72.2 | 1.00 |
+| Regenerate | 0.40 | 0.77 | 21.1 | 21.1 | N/A | N/A | N/A | -150.5 | 2.52 |
+| Auto Local Repair | 0.60 | 0.92 | 26.2 | 26.2 | N/A | N/A | N/A | -2.2 | 1.92 |
 
 ### Qwen2.5-14B-Instruct
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.75 | 0.75 | 7.6 | 7.6 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 0.97 | 0.97 | 1.9 | 1.9 | N/A | N/A | N/A | 37.3 |
-| Regenerate | 0.75 | 0.88 | 12.1 | 12.1 | N/A | N/A | N/A | -88.8 |
-| Auto Local Repair | 0.75 | 0.98 | 9.6 | 9.6 | N/A | N/A | N/A | -24.9 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.75 | 0.75 | 7.6 | 7.6 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 0.97 | 0.97 | 1.9 | 1.9 | N/A | N/A | N/A | 37.3 | 1.00 |
+| Regenerate | 0.75 | 0.88 | 12.1 | 12.1 | N/A | N/A | N/A | -88.8 | 1.65 |
+| Auto Local Repair | 0.75 | 0.98 | 9.6 | 9.6 | N/A | N/A | N/A | -24.9 | 1.33 |
 
 ### Qwen2.5-1.5B
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.25 | 0.25 | 1.7 | 1.7 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 0.92 | 0.92 | 1.5 | 1.5 | N/A | N/A | N/A | 53.8 |
-| Regenerate | 0.25 | 0.30 | 6.9 | 6.9 | N/A | N/A | N/A | 299.3 |
-| Auto Local Repair | 0.25 | 0.50 | 14.6 | 14.6 | N/A | N/A | N/A | -265.9 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.25 | 0.25 | 1.7 | 1.7 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 0.92 | 0.92 | 1.5 | 1.5 | N/A | N/A | N/A | 53.8 | 1.00 |
+| Regenerate | 0.25 | 0.30 | 6.9 | 6.9 | N/A | N/A | N/A | 299.3 | 3.87 |
+| Auto Local Repair | 0.25 | 0.50 | 14.6 | 14.6 | N/A | N/A | N/A | -265.9 | 3.53 |
 
 ### DeepSeek-R1-Distill-Qwen-1.5B
 
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Vanilla | 0.00 | 0.00 | 5.6 | 5.6 | N/A | N/A | N/A | 0.0 |
-| Constrained Decoding | 0.65 | 0.65 | 2.2 | 2.2 | N/A | N/A | N/A | 71.7 |
-| Regenerate | 0.00 | 0.03 | 26.2 | 26.2 | N/A | N/A | N/A | 386.3 |
-| Auto Local Repair | 0.03 | 0.07 | 34.8 | 34.8 | N/A | N/A | N/A | -156.3 |
+| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
+|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
+| Vanilla | 0.00 | 0.00 | 5.6 | 5.6 | N/A | N/A | N/A | 0.0 | 1.00 |
+| Constrained Decoding | 0.65 | 0.65 | 2.2 | 2.2 | N/A | N/A | N/A | 71.7 | 1.00 |
+| Regenerate | 0.00 | 0.03 | 26.2 | 26.2 | N/A | N/A | N/A | 386.3 | 4.97 |
+| Auto Local Repair | 0.03 | 0.07 | 34.8 | 34.8 | N/A | N/A | N/A | -156.3 | 4.82 |
 
 ---
 

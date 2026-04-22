@@ -20,12 +20,12 @@ def _generate_autoregressive_trace_common(
     prompt: str,
     generation_kwargs: Optional[dict] = None,
     stream_callback: Optional[Any] = None,
+    track_hidden: Optional[bool] = None,
 ) -> TracePack:
     """Shared implementation for generate_autoregressive_trace across Qwen2/Qwen3."""
     generation_kwargs = generation_kwargs or {"max_new_tokens": 128}
     device = model_instance.device
 
-    # Prepare input
     if isinstance(prompt, str):
         input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
     else:
@@ -34,12 +34,10 @@ def _generate_autoregressive_trace_common(
     input_len = input_ids.shape[1]
     max_new_tokens = generation_kwargs.get("max_new_tokens", 128)
 
-    # Decide whether to track hidden states
-    track_hidden = model_instance.instrumentation_cfg.track_hidden_states
+    # Caller can override; otherwise fall back to instrumentation config.
+    if track_hidden is None:
+        track_hidden = model_instance.instrumentation_cfg.track_hidden_states
 
-    # Use model.generate() for generation - this ensures correct behavior
-    # Pass output_hidden_states only if we need it
-    # Filter out model-specific kwargs that Qwen doesn't support in generate()
     filtered_kwargs = {
         k: v for k, v in generation_kwargs.items()
         if k not in ["max_new_tokens", "frequency_penalty", "presence_penalty"]
@@ -52,103 +50,55 @@ def _generate_autoregressive_trace_common(
         **filtered_kwargs,
     )
 
-    # Extract generated token IDs
     if hasattr(gen_output, "sequences"):
         generated_ids = gen_output.sequences[0][input_len:]
     else:
-        # Fallback for older API
         generated_ids = gen_output[0][input_len:]
 
+    past_kv = None
+    cumulative_ids = input_ids
     token_logs: List[TokenRecorder] = []
 
-    if track_hidden and hasattr(gen_output, "hidden_states"):
-        # Re-run step-by-step to record hidden states properly
-        # Note: This is expensive but necessary for analysis
-        past_kv = None
-        cumulative_ids = input_ids
+    for step, token_id in enumerate(generated_ids):
+        input_t = token_id.unsqueeze(0).unsqueeze(0).to(device)
 
-        for step, token_id in enumerate(generated_ids):
-            input_t = token_id.unsqueeze(0).unsqueeze(0).to(device)
+        outputs = model_instance.forward(
+            input_ids=input_t,
+            past_key_values=past_kv,
+            use_cache=True,
+            output_hidden_states=True,
+        )
 
-            outputs = model_instance.forward(
-                input_ids=input_t,
-                past_key_values=past_kv,
-                use_cache=True,
-                output_hidden_states=True,
-            )
+        current_states = {}
+        if track_hidden and hasattr(outputs, "hidden_states") and outputs.hidden_states:
+            for layer_idx, hidden_state in enumerate(outputs.hidden_states):
+                if hidden_state is not None:
+                    current_states[layer_idx] = HiddenState(
+                        layer_idx=layer_idx,
+                        value=hidden_state[0, -1].cpu()
+                    )
 
-            # Get hidden states for this step
-            if hasattr(outputs, "hidden_states") and outputs.hidden_states:
-                current_states = {}
-                for layer_idx, hidden_state in enumerate(outputs.hidden_states):
-                    if hidden_state is not None:
-                        current_states[layer_idx] = HiddenState(
-                            layer_idx=layer_idx,
-                            value=hidden_state[0, -1].cpu()
-                        )
-            else:
-                current_states = {}
+        logits = outputs.logits[0, -1, :]
+        probs = torch.nn.functional.softmax(logits.float(), dim=-1)
+        token_prob = probs[token_id.item() if hasattr(token_id, "item") else token_id].item()
 
-            # Compute log prob for this token
-            logits = outputs.logits[0, -1, :]
-            probs = torch.nn.functional.softmax(logits.float(), dim=-1)
-            token_prob = probs[token_id].item()
+        token_str = tokenizer.decode([token_id], skip_special_tokens=False).replace("�", "")
 
-            token_str = tokenizer.decode([token_id], skip_special_tokens=False).replace("�", "")
+        token_logs.append(TokenRecorder(
+            idx=token_id.item() if hasattr(token_id, "item") else int(token_id),
+            step=step,
+            token=token_str,
+            prob=token_prob,
+            log_prob=torch.log(torch.clamp(torch.tensor(token_prob), min=1e-12)).item(),
+            hidden_states=current_states,
+            input_ids=cumulative_ids.cpu(),
+        ))
 
-            token_logs.append(TokenRecorder(
-                idx=token_id.item() if hasattr(token_id, "item") else int(token_id),
-                step=step,
-                token=token_str,
-                prob=token_prob,
-                log_prob=torch.log(torch.tensor(token_prob)).item(),
-                hidden_states=current_states,
-                input_ids=cumulative_ids.cpu(),
-            ))
+        cumulative_ids = torch.cat([cumulative_ids, token_id.unsqueeze(0).unsqueeze(0)], dim=-1)
+        past_kv = outputs.past_key_values
 
-            cumulative_ids = torch.cat([cumulative_ids, token_id.unsqueeze(0).unsqueeze(0)], dim=-1)
-            past_kv = outputs.past_key_values
-
-            if stream_callback:
-                stream_callback(token_str)
-    else:
-        # Simple case: decode tokens and compute probs via forward pass
-        # This gives proper probability estimates regardless of do_sample setting
-        past_kv = None
-        cumulative_ids = input_ids
-
-        for step, token_id in enumerate(generated_ids):
-            input_t = token_id.unsqueeze(0).unsqueeze(0).to(device)
-
-            outputs = model_instance.forward(
-                input_ids=input_t,
-                past_key_values=past_kv,
-                use_cache=True,
-            )
-
-            # Compute probability for this token from logits
-            logits = outputs.logits[0, -1, :]
-            probs = torch.nn.functional.softmax(logits.float(), dim=-1)
-            token_prob = probs[token_id.item() if hasattr(token_id, "item") else token_id].item()
-            token_log_prob = torch.log(torch.clamp(torch.tensor(token_prob), min=1e-12)).item()
-
-            token_str = tokenizer.decode([token_id], skip_special_tokens=False).replace("�", "")
-
-            token_logs.append(TokenRecorder(
-                idx=token_id.item() if hasattr(token_id, "item") else int(token_id),
-                step=step,
-                token=token_str,
-                prob=token_prob,
-                log_prob=token_log_prob,
-                hidden_states={},
-                input_ids=cumulative_ids.cpu(),
-            ))
-
-            cumulative_ids = torch.cat([cumulative_ids, token_id.unsqueeze(0).unsqueeze(0)], dim=-1)
-            past_kv = outputs.past_key_values
-
-            if stream_callback:
-                stream_callback(token_str)
+        if stream_callback:
+            stream_callback(token_str)
 
     return TracePack(
         token_logprobs=token_logs,
@@ -176,9 +126,12 @@ class RethinkQwenForCausalLM(Qwen2ForCausalLM):
         prompt: str,
         generation_kwargs: Optional[dict] = None,
         stream_callback: Optional[Any] = None,
+        track_hidden: Optional[bool] = None,
     ) -> TracePack:
         """Run generation and record trace."""
-        return _generate_autoregressive_trace_common(self, tokenizer, prompt, generation_kwargs, stream_callback)
+        return _generate_autoregressive_trace_common(
+            self, tokenizer, prompt, generation_kwargs, stream_callback, track_hidden
+        )
 
 
 class RethinkQwen3ForCausalLM(Qwen3ForCausalLM):
@@ -200,6 +153,9 @@ class RethinkQwen3ForCausalLM(Qwen3ForCausalLM):
         prompt: str,
         generation_kwargs: Optional[dict] = None,
         stream_callback: Optional[Any] = None,
+        track_hidden: Optional[bool] = None,
     ) -> TracePack:
         """Run generation and record trace."""
-        return _generate_autoregressive_trace_common(self, tokenizer, prompt, generation_kwargs, stream_callback)
+        return _generate_autoregressive_trace_common(
+            self, tokenizer, prompt, generation_kwargs, stream_callback, track_hidden
+        )

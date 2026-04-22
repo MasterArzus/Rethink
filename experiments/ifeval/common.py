@@ -63,6 +63,9 @@ def make_result_record(
     error_type: str,
     final_response: str,
     violation_history: List[str],
+    inspect_time_seconds: float = 0.0,
+    total_llm_actor_tokens: int = 0,
+    total_clicks: int = 0,
 ) -> Dict:
     return {
         "task_id": task.get("id"),
@@ -81,6 +84,9 @@ def make_result_record(
         "violation_history": json.dumps(violation_history, ensure_ascii=False),
         "prompt": task.get("prompt", ""),
         "constraints": json.dumps(task.get("constraints", {}), ensure_ascii=False),
+        "inspect_time_seconds": inspect_time_seconds,
+        "total_llm_actor_tokens": total_llm_actor_tokens,
+        "total_clicks": total_clicks,
     }
 
 
