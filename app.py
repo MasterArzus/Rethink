@@ -7,6 +7,7 @@ import re
 import yaml
 import sys
 import datasets
+import torch
 import uuid
 import json
 from datetime import datetime
@@ -213,7 +214,7 @@ if 'correction_turns' not in st.session_state:
 # ============================================================================
 # Section 1: Experiment Setup (Collapsible)
 # ============================================================================
-with st.sidebar.expander("🧪 实验设置", expanded=True):
+with st.sidebar.expander("🧪 Experiment Setup", expanded=True):
     # Participant ID
     participant_id = st.text_input("Participant ID", value=st.session_state.get("participant_id", "pilot"))
     st.session_state["participant_id"] = participant_id
@@ -295,7 +296,7 @@ with st.sidebar.expander("🧪 实验设置", expanded=True):
 # ============================================================================
 # Section 2: Task Selection (Collapsible)
 # ============================================================================
-with st.sidebar.expander("📋 任务选择", expanded=True):
+with st.sidebar.expander("📋 Task Selection", expanded=True):
     dataset_config = load_yaml("/root/Rethink/configs/datasets.yaml")
     dataset_options = ["IFEval (Steerability)", "Hydrology QA"] + list(dataset_config.keys())
     default_dataset_idx = dataset_options.index(st.session_state['default_dataset']) if st.session_state['default_dataset'] in dataset_options else 0
@@ -479,7 +480,7 @@ else:
     default_gen_cfg = GenerationConfig().to_dict()
     default_preset = "Default"
 
-with st.sidebar.expander("⚙️ 生成参数", expanded=False):
+with st.sidebar.expander("⚙️ Generation Parameters", expanded=False):
     gen_configs = load_config_files("generation")
     gen_preset_options = list(gen_configs.keys()) + [default_preset]
     default_idx = len(gen_preset_options) - 1  # "Default" or "Model Default" at end
@@ -547,7 +548,7 @@ with st.sidebar.expander("⚙️ 生成参数", expanded=False):
 # Section 4: Logging Control (Manual Start)
 # ============================================================================
 st.sidebar.markdown("---")
-st.sidebar.subheader("📋 实验记录")
+st.sidebar.subheader("📋 Experiment Log")
 
 # Session state for logging control
 if 'logging_started' not in st.session_state:
@@ -557,7 +558,7 @@ if 'current_participant_id' not in st.session_state:
 
 # Display logging status
 if st.session_state['logging_started']:
-    st.sidebar.success("✅ 记录中")
+    st.sidebar.success("✅ Recording")
     logger = get_experiment_logger()
     if logger:
         st.sidebar.caption(f"Participant: {logger.participant_id}")
@@ -572,16 +573,16 @@ if st.session_state['logging_started']:
         st.metric("Gen Calls", st.session_state.get('interaction_turns', 0))
         st.metric("Probes", st.session_state.get('total_probes', 0))
 
-    if st.sidebar.button("🔄 重置记录"):
+    if st.sidebar.button("🔄 Reset Log"):
         reset_metrics()
         st.rerun()
 
-    if st.sidebar.button("⏹️ 停止记录"):
+    if st.sidebar.button("⏹️ Stop Recording"):
         st.session_state['logging_started'] = False
         st.rerun()
 else:
-    st.sidebar.info("点击开始记录实验")
-    if st.sidebar.button("▶️ 开始记录"):
+    st.sidebar.info("Click to start recording experiment")
+    if st.sidebar.button("▶️ Start Recording"):
         # Initialize/reset logger with current participant ID
         participant = st.session_state.get("participant_id", "pilot")
         logging_cfg = LoggingConfig(output_dir="/root/Rethink/outputs/interactive_sessions")
@@ -591,7 +592,7 @@ else:
         reset_metrics()
         st.rerun()
 
-st.sidebar.caption("记录在 outputs/interactive_sessions/")
+st.sidebar.caption("Logs saved to outputs/interactive_sessions/")
 
 # ============================================================================
 # Model Loading
@@ -772,7 +773,7 @@ if 'model' in st.session_state:
 
                             # === LEFT COLUMN: Layer Analysis ===
                             with col_left:
-                                st.caption("🔬 层分析")
+                                st.caption("🔬 Layer Analysis")
 
                                 # Ensure Hidden States are computed
                                 if selected_idx not in hs_cache:
@@ -824,13 +825,13 @@ if 'model' in st.session_state:
 
                             # === RIGHT COLUMN: Quick Actions ===
                             with col_right:
-                                st.caption("🔧 快速操作")
+                                st.caption("🔧 Quick Actions")
 
                                 # Steering prompt
                                 steering_prompt = st.text_input(
-                                    "Steering prompt (可选)",
+                                    "Steering prompt (optional)",
                                     key=f"steer_{selected_idx}",
-                                    help="在重新生成时添加额外的引导提示"
+                                    help="Add extra guidance when regenerating"
                                 )
 
                                 # Selection for Force token
@@ -856,9 +857,8 @@ if 'model' in st.session_state:
                                             session.start_generation()
                                             new_trace, new_analysis = session.rethink_from_step(
                                                 trace, selected_idx,
-                                                max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                                 steering_prompt=steering_prompt,
-                                                **gen_cfg_data,
+                                                max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                             )
                                             tokens_gen = len(new_trace.tokenlist) - selected_idx
                                             st.session_state['total_tokens_used'] += tokens_gen
@@ -888,10 +888,9 @@ if 'model' in st.session_state:
                                                 session.start_generation()
                                                 new_trace, new_analysis = session.rethink_from_step(
                                                     trace, selected_idx,
-                                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                                     force_token=selected_alt_token,
                                                     steering_prompt=steering_prompt,
-                                                    **gen_cfg_data,
+                                                    max_new_tokens=gen_cfg_data.get("max_new_tokens", 128),
                                                 )
                                                 tokens_gen = len(new_trace.tokenlist) - selected_idx
                                                 st.session_state['total_tokens_used'] += tokens_gen
@@ -1102,7 +1101,6 @@ if 'model' in st.session_state:
                 trace, analysis = session.run_initial_inference(
                     full_prompt_str,
                     use_template=False,  # We already applied the template
-                    max_new_tokens=max_new_tokens,
                     stream_callback=token_stream_callback,
                     **gen_cfg_data,
                 )
@@ -1137,12 +1135,29 @@ if 'model' in st.session_state:
                 trace_analyzer = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
                 sos_scores = trace_analyzer.compute_sos_scores()
                 st.session_state['sos_scores'] = sos_scores
+
+                # Recompute token probabilities from stored hidden states using Logit Lens approach
+                if trace.tokenlist:
+                    last_layer = max(trace.tokenlist[0].hidden_states.keys())
+                    for token_rec in trace.tokenlist:
+                        token_str = token_rec.token
+                        hs = token_rec.hidden_states.get(last_layer)
+                        if hs is not None:
+                            lens = session.controller._decode_hidden_state(hs.get_value(), top_k=10)
+                            top_tokens = [tok for tok, _ in lens]
+                            top_probs = [prob for _, prob in lens]
+                            token_rec.prob = top_probs[top_tokens.index(token_str)] if token_str in top_tokens else 0.0
+                        else:
+                            token_rec.prob = 0.01
+
                 st.session_state['hidden_state_cache'] = {}
                 st.session_state['probe_cache'] = {}
                 st.session_state['selected_layer'] = None
                 st.session_state.pop('analysis_obj', None)
                 st.session_state['selected_token_index'] = 0
 
+                st.session_state['trace'] = trace
+                st.session_state['analysis'] = analysis
                 st.session_state.messages.append({"role": "assistant", "content": display_response})
                 st.rerun()
 

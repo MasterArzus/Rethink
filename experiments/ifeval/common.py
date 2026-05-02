@@ -33,11 +33,48 @@ def split_task_groups(tasks: Iterable[Dict]) -> List[Tuple[str, List[Dict]]]:
 
 
 def strip_reasoning_markers(response: str) -> str:
-    # Remove complete think blocks and hide trailing unfinished think segments.
-    text = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
-    trailing_open = text.find("<think>")
+    """
+    Remove reasoning tags from various model formats:
+    - DeepSeek: <think>...</think> (standard)
+    - Qwen: <|im_start|>...<|im_end|> or <im>...</im>
+    - Others: similar patterns
+    """
+    # DeepSeek style: remove think blocks
+    # Format can be: <think>...</think> output  OR  content...</think> output
+    if "</think>" in response:
+        # Check if there's a matching <think> before </think>
+        think_start = response.find("<think>")
+        think_end = response.find("</think>")
+
+        if think_start != -1 and think_start < think_end:
+            # Standard format: <think>...</think> - remove complete blocks
+            text = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
+            # Check for any trailing incomplete think
+            trailing_open = text.find("<think>")
+            if trailing_open != -1:
+                text = text[:trailing_open]
+        else:
+            # Only </think> exists (no <think> before it)
+            # This means content before </think> is thinking, extract after
+            text = response[think_end + len("</think>"):]
+    elif "<think>" in response:
+        # Only <think> exists (truncated), extract content after it
+        idx = response.find("<think>")
+        text = response[idx + len("<think>"):]
+    else:
+        text = response
+
+    # Qwen style: <|im_start|>...<|im_end|> or <im>...</im>
+    text = re.sub(r"<\|im_start\|>.*?\|im_end\|>", "", text, flags=re.DOTALL)
+    trailing_open = text.find("<|im_start|>")
     if trailing_open != -1:
         text = text[:trailing_open]
+
+    text = re.sub(r"<im>.*?</im>", "", text, flags=re.DOTALL)
+    trailing_open = text.find("<im>")
+    if trailing_open != -1:
+        text = text[:trailing_open]
+
     return text.strip()
 
 
@@ -46,6 +83,33 @@ def build_correction_prompt(task_type: str, error_msg: str) -> str:
         words = error_msg.replace("Found forbidden words:", "").strip()
         return f"Don't use the following words in the subsequent answer: {words}"
     return f"Your answer does not satisfy the constraints: {error_msg}. Please correct it."
+
+
+def extract_base_constraint(prompt: str) -> str:
+    """Extract the base constraint part (before [HARD CONSTRAINT])"""
+    if "[HARD CONSTRAINT]" in prompt:
+        return prompt.split("[HARD CONSTRAINT]")[0].strip()
+    return prompt.strip()
+
+
+def extract_hard_constraint(prompt: str) -> str:
+    """Extract the hard constraint part (after [HARD CONSTRAINT])"""
+    if "[HARD CONSTRAINT]" in prompt:
+        return prompt.split("[HARD CONSTRAINT]")[1].strip()
+    return ""
+
+
+def extract_base_constraints(constraints: Dict) -> Dict:
+    """
+    Extract base constraints by removing hard constraint words.
+    Hard constraints are the extra banned words added during task hardening.
+    """
+    # The full constraints already contain both base and hard words.
+    # For K=0 measurement, we need to identify which words were the hard additions.
+    # This requires knowing which words were in the original vs hard constraint.
+    # A simple approach: assume hard words are high-frequency stop words not in original IFEval.
+    # For now, return a copy of constraints - the actual filtering happens at checker level.
+    return constraints.copy()
 
 
 def make_result_record(
@@ -66,7 +130,26 @@ def make_result_record(
     inspect_time_seconds: float = 0.0,
     total_llm_actor_tokens: int = 0,
     total_clicks: int = 0,
+    gen_time_seconds: float = 0.0,
+    vanilla_total_tokens: int = 0,
+    # K=0/K=1 staged measurement fields
+    k0_acc1: bool = False,
+    k1_acc1: bool = False,
+    k0_acc_k: bool = False,
+    k1_acc_k: bool = False,
+    k0_pass_turn: int = 0,
+    k1_pass_turn: int = 0,
 ) -> Dict:
+    # gen_time_s = wall_clock_s - inspect_time_s (for human methods) or = wall_clock_s (for automated)
+    if gen_time_seconds == 0.0:
+        gen_time_seconds = wall_clock_seconds - inspect_time_seconds
+
+    # token_eff% = (vanilla_tokens - method_tokens) / vanilla_tokens * 100
+    if vanilla_total_tokens > 0 and total_tokens > 0:
+        token_eff_percent = (vanilla_total_tokens - total_tokens) / vanilla_total_tokens * 100
+    else:
+        token_eff_percent = 0.0
+
     return {
         "task_id": task.get("id"),
         "task_type": task.get("type"),
@@ -87,6 +170,16 @@ def make_result_record(
         "inspect_time_seconds": inspect_time_seconds,
         "total_llm_actor_tokens": total_llm_actor_tokens,
         "total_clicks": total_clicks,
+        "gen_time_seconds": gen_time_seconds,
+        "vanilla_total_tokens": vanilla_total_tokens,
+        "token_eff_percent": token_eff_percent,
+        # K=0/K=1 staged measurement
+        "k0_acc1": k0_acc1,
+        "k1_acc1": k1_acc1,
+        "k0_acc_k": k0_acc_k,
+        "k1_acc_k": k1_acc_k,
+        "k0_pass_turn": k0_pass_turn,
+        "k1_pass_turn": k1_pass_turn,
     }
 
 

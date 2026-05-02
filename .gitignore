@@ -31,3 +31,4 @@ outputs/
 *.csv
 *.jsonl
 *.log
+*.json

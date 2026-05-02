@@ -72,18 +72,18 @@ class RethinkController:
     def _project_hidden_state(self, hidden_state: torch.Tensor) -> torch.Tensor:
         """
         Project a single hidden state through the final normalization + LM head to obtain logits.
-        Assumes hidden_state has shape (1, hidden_dim).
+        Assumes hidden_state has shape (hidden_dim,) or (1, hidden_dim).
         """
         state = hidden_state.to(self.model.device)
-        if state.dim() == 2:
-            state = state.unsqueeze(1)
+        if state.dim() == 1:
+            state = state.unsqueeze(0)
         normalized = self.model.model.norm(state)
         return self.model.lm_head(normalized)
 
     @torch.no_grad()
     def _decode_hidden_state(self, hidden_state: torch.Tensor, top_k: int = 10) -> List[Tuple[str, float]]:
         logits = self._project_hidden_state(hidden_state)
-        probs = torch.nn.functional.softmax(logits[0, -1, :], dim=-1)
+        probs = torch.nn.functional.softmax(logits[0, :], dim=-1)
         top_probs, top_indices = torch.topk(probs, k=top_k)
         return [
             (self.tokenizer.decode([idx.item()]), prob.item())

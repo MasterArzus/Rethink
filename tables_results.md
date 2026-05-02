@@ -1,245 +1,121 @@
-# IFEval 实验结果表（按 revision.md 指标）
+# IFEval 实验结果表（v3 - compute_stats.py 统计，DeepSeek 修复）
 
-> **说明**：Taboo + JSON 两类任务的结果已合并（取平均）。`user_interact` 列对自动化方法为空（N/A）。
-> **注意**：Regenerate 方法在 DeepSeek Taboo 上表现极差是因为模型本身对 Taboo 约束遵守能力极弱（Vanilla 0%），与 self-correction 策略无关。
-> **acc@K (K=5)**：5 次内通过率，包含重试纠错的效果。
-
----
-
-## 表1: Automated Baselines（Model × Method，Taboo+JSON 平均）
-
-### 指标说明
-- **acc@1**: 首次通过率
-- **acc@K**: K次内通过率（K=5）
-- **wall_clock**: 任务总耗时（秒）
-- **gen**: 模型生成时间（秒）；自动化实验中 gen ≈ wall_clock
-- **inspect**: 用户检查/决策时间（秒）；自动化实验为 N/A
-- **clicks**: 平均点击次数（仅人类实验）
-- **avg_type**: 平均打字字符数（仅人类实验）
-- **token_eff%**: Token节省率（相对于该模型 Vanilla 基线）
-
-### DeepSeek-R1-Distill-Llama-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.08 | 0.08 | 15.0 | 15.0 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 0.72 | 0.72 | 4.9 | 4.9 | N/A | N/A | N/A | 72.4 | 1.00 |
-| Regenerate | 0.37 | 0.50 | 45.4 | 45.4 | N/A | N/A | N/A | -224.5 | 3.13 |
-| Auto Local Repair | 0.12 | 0.23 | 39.9 | 39.9 | N/A | N/A | N/A | -143.1 | 4.38 |
-
-### Llama-3.1-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.60 | 0.60 | 2.3 | 2.3 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 0.93 | 0.93 | 1.7 | 1.7 | N/A | N/A | N/A | 48.3 | 1.00 |
-| Regenerate | 0.60 | 0.95 | 4.9 | 4.9 | N/A | N/A | N/A | -98.8 | 1.60 |
-| Auto Local Repair | 0.62 | 0.97 | 13.9 | 13.9 | N/A | N/A | N/A | -36.6 | 1.57 |
-
-### Qwen3-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.52 | 0.52 | 15.5 | 15.5 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 1.00 | 1.00 | 5.3 | 5.3 | N/A | N/A | N/A | 72.2 | 1.00 |
-| Regenerate | 0.40 | 0.77 | 21.1 | 21.1 | N/A | N/A | N/A | -150.5 | 2.52 |
-| Auto Local Repair | 0.60 | 0.92 | 26.2 | 26.2 | N/A | N/A | N/A | -2.2 | 1.92 |
-
-### Qwen2.5-14B-Instruct
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.75 | 0.75 | 7.6 | 7.6 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 0.97 | 0.97 | 1.9 | 1.9 | N/A | N/A | N/A | 37.3 | 1.00 |
-| Regenerate | 0.75 | 0.88 | 12.1 | 12.1 | N/A | N/A | N/A | -88.8 | 1.65 |
-| Auto Local Repair | 0.75 | 0.98 | 9.6 | 9.6 | N/A | N/A | N/A | -24.9 | 1.33 |
-
-### Qwen2.5-1.5B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.25 | 0.25 | 1.7 | 1.7 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 0.92 | 0.92 | 1.5 | 1.5 | N/A | N/A | N/A | 53.8 | 1.00 |
-| Regenerate | 0.25 | 0.30 | 6.9 | 6.9 | N/A | N/A | N/A | 299.3 | 3.87 |
-| Auto Local Repair | 0.25 | 0.50 | 14.6 | 14.6 | N/A | N/A | N/A | -265.9 | 3.53 |
-
-### DeepSeek-R1-Distill-Qwen-1.5B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% | api_calls |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|-----------|
-| Vanilla | 0.00 | 0.00 | 5.6 | 5.6 | N/A | N/A | N/A | 0.0 | 1.00 |
-| Constrained Decoding | 0.65 | 0.65 | 2.2 | 2.2 | N/A | N/A | N/A | 71.7 | 1.00 |
-| Regenerate | 0.00 | 0.03 | 26.2 | 26.2 | N/A | N/A | N/A | 386.3 | 4.97 |
-| Auto Local Repair | 0.03 | 0.07 | 34.8 | 34.8 | N/A | N/A | N/A | -156.3 | 4.82 |
+> **说明**：Taboo + JSON 两类任务的结果已合并（各30条，共60条）。
+> **统计方法**：C0/C1 Acc@K 从 final_response 反推，S.R = C0 AND C1
+> **DeepSeek 修复**：使用 `</think>` 分隔符提取实际回答
+> **更新日期**：2026/04/27
 
 ---
 
-## 分Dataset结果详情
+## 表1: Automated Baselines（Model × Method）
 
 ### DeepSeek-R1-Distill-Llama-8B
 
-**Taboo:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.00 | 0.00 | 16.1s | 0.0 |
-| Constrained Decoding | 0.43 | 0.43 | 9.5s | 48.1 |
-| Regenerate | 0.07 | 0.20 | 68.1s | -342.4 |
-| Auto Local Repair | 0.00 | 0.03 | 62.3s | -157.3 |
-
-**JSON:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.17 | 0.17 | 13.9s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.3s | 96.7 |
-| Regenerate | 0.67 | 0.80 | 22.7s | -106.7 |
-| Auto Local Repair | 0.23 | 0.43 | 17.6s | -128.8 |
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 0.0 | 85.0 | 36.7 | 36.7 |
+| Auto LR | 21.7 | 90.0 | 43.3 | 43.3 |
+| CD | 71.7 | 96.7 | 71.7 | 71.7 |
 
 ### Llama-3.1-8B
 
-**Taboo:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.43 | 0.43 | 3.9s | 0.0 |
-| Constrained Decoding | 0.87 | 0.87 | 3.1s | 27.3 |
-| Regenerate | 0.43 | 0.90 | 8.5s | -116.0 |
-| Auto Local Repair | 0.47 | 0.93 | 24.0s | -38.9 |
-
-**JSON:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.77 | 0.77 | 0.7s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.2s | 69.3 |
-| Regenerate | 0.77 | 1.00 | 1.2s | -81.5 |
-| Auto Local Repair | 0.77 | 1.00 | 3.9s | -34.3 |
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 28.3 | 95.0 | 91.7 | 90.0 |
+| Auto LR | 46.7 | 95.0 | 90.0 | 88.3 |
+| CD | 93.3 | 98.3 | 81.7 | 75.0 |
 
 ### Qwen3-8B
 
-**Taboo:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.73 | 0.73 | 15.7s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 10.2s | 47.5 |
-| Regenerate | 0.33 | 0.53 | 28.3s | -230.7 |
-| Auto Local Repair | 0.97 | 1.00 | 17.5s | 45.8 |
-
-**JSON:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.30 | 0.30 | 15.3s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.3s | 97.0 |
-| Regenerate | 0.47 | 1.00 | 13.8s | -70.3 |
-| Auto Local Repair | 0.23 | 0.83 | 34.9s | -50.2 |
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 56.7 | 85.0 | 58.3 | 58.3 |
+| Auto LR | 63.3 | 85.0 | 63.3 | 63.3 |
+| CD | 95.0 | 95.0 | 100.0 | 95.0 |
 
 ### Qwen2.5-14B-Instruct
 
-**Taboo:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.50 | 0.50 | 12.0s | 0.0 |
-| Constrained Decoding | 0.93 | 0.93 | 3.5s | 12.4 |
-| Regenerate | 0.50 | 0.77 | 23.2s | -177.6 |
-| Auto Local Repair | 0.50 | 0.97 | 17.2s | -49.8 |
-
-**JSON:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 1.00 | 1.00 | 3.1s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.4s | 62.2 |
-| Regenerate | 1.00 | 1.00 | 1.0s | 0.0 |
-| Auto Local Repair | 1.00 | 1.00 | 2.1s | 0.0 |
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 48.3 | 96.7 | 95.0 | 93.3 |
+| Auto LR | 61.7 | 98.3 | 100.0 | 98.3 |
+| CD | 96.7 | 98.3 | 96.7 | 96.7 |
 
 ### Qwen2.5-1.5B
 
-**Taboo:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.30 | 0.30 | 2.2s | 0.0 |
-| Constrained Decoding | 0.83 | 0.83 | 2.8s | 23.8 |
-| Regenerate | 0.30 | 0.40 | 8.6s | 281.8 |
-| Auto Local Repair | 0.30 | 0.80 | 15.2s | -167.5 |
-
-**JSON:**
-
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.20 | 0.20 | 1.2s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.2s | 83.7 |
-| Regenerate | 0.20 | 0.20 | 5.1s | 332.1 |
-| Auto Local Repair | 0.20 | 0.20 | 14.0s | -364.4 |
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 15.0 | 80.0 | 33.3 | 31.7 |
+| Auto LR | 31.7 | 88.3 | 48.3 | 46.7 |
+| CD | 81.7 | 95.0 | 50.0 | 40.8 |
 
 ### DeepSeek-R1-Distill-Qwen-1.5B
 
-**Taboo:**
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Regenerate | 0.0 | 53.3 | 21.7 | 20.0 |
+| Auto LR | 15.0 | 61.7 | 23.3 | 23.3 |
+| CD | 65.0 | 98.3 | 65.0 | 65.0 |
 
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.00 | 0.00 | 5.8s | 0.0 |
-| Constrained Decoding | 0.30 | 0.30 | 4.3s | 46.3 |
-| Regenerate | 0.00 | 0.00 | 25.0s | 399.7 |
-| Auto Local Repair | 0.00 | 0.03 | 49.2s | -168.0 |
+---
 
-**JSON:**
+## 表2: LLM Actor Simulation（Chat / Steer）
 
-| Method | acc@1 | acc@K | wall_clock | token_eff% |
-|--------|-------|-------|------------|------------|
-| Vanilla | 0.00 | 0.00 | 5.3s | 0.0 |
-| Constrained Decoding | 1.00 | 1.00 | 0.2s | 97.1 |
-| Regenerate | 0.00 | 0.07 | 27.4s | 373.2 |
-| Auto Local Repair | 0.07 | 0.10 | 20.4s | -144.7 |
+### DeepSeek-R1-Distill-Llama-8B
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 1.7 | 80.0 | 50.0 | 48.3 |
+| Steer | 1.7 | 83.3 | 73.3 | 71.7 |
+
+### Llama-3.1-8B
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 48.3 | 95.0 | 91.7 | 90.0 |
+| Steer | 58.3 | 95.2 | 96.4 | 94.0 |
+
+### Qwen3-8B
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 60.0 | 90.0 | 60.0 | 60.0 |
+| Steer | 62.5 | 87.5 | 60.0 | 59.2 |
+
+### Qwen2.5-14B-Instruct
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 63.3 | 98.3 | 95.0 | 93.3 |
+| Steer | 65.0 | 96.7 | 98.3 | 96.7 |
+
+### Qwen2.5-1.5B
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 18.3 | 93.3 | 36.7 | 36.7 |
+| Steer | 28.3 | 91.7 | 60.0 | 58.3 |
+
+### DeepSeek-R1-Distill-Qwen-1.5B
+
+| Method | K0 Acc@1 | K0 Acc@K | C1 Acc@K | S.R |
+|--------|----------|----------|----------|-----|
+| Chat | 1.7 | 70.0 | 20.0 | 20.0 |
+| Steer | 1.6 | 60.3 | 50.8 | 47.6 |
 
 ---
 
 ## 关键发现
 
-1. **Constrained Decoding (CD)** 在 JSON 上全面满分（1.00），在 Taboo 上对 Qwen3/14B 满分但对 DeepSeek 仅 0.43
-2. **Auto Local Repair** 在 Llama3-8B 上表现最佳（acc@K=0.97），其次 Qwen3-8B（acc@K=0.92）；但对 DeepSeek 系列极差
-3. **DeepSeek Taboo 问题**：模型本身 Vanilla 0% 成功率，Regenerate/CD/AutoLR 均无法有效解决
-4. **negative token_eff%**：Regenerate 和 Auto Local Repair 的 token 消耗均超过 Vanilla，因为多轮重生成导致
-5. **acc@K vs acc@1 差异**：Regenerate 和 Auto Local Repair 通过重试显著提升 acc@K（Llama3 AutoLR: 0.62→0.97, Qwen3-8B AutoLR: 0.60→0.92）
+1. **DeepSeek 修复有效**：使用 `』』` 分隔符后，C0 Acc@K 从 ~36% 提升到 85%（deepseek_r1 regenerate）
+2. **Steer > Chat**：DeepSeek Steer S.R = 71.7% vs Chat 48.3%
+3. **CD 在 C0 上优秀**：但 C1 需要新设计（CD 无法处理动态约束变化）
+4. **模型排序**：Qwen2.5-14B > Llama3-8B > Qwen3-8B > DeepSeek > Qwen2.5-1.5B
 
 ---
 
-## 待补充：人类实验数据（Chat / Steer）
+## 待办项
 
-### Llama-3.1-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Chat | — | — | — | — | — | — | — | — |
-| Steer | — | — | — | — | — | — | — | — |
-
-### DeepSeek-R1-Distill-Llama-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Chat | — | — | — | — | — | — | — | — |
-| Steer | — | — | — | — | — | — | — | — |
-
-### Qwen3-8B
-
-| Method | acc@1 | acc@K | wall_clock | gen | inspect | clicks | avg_type | token_eff% |
-|--------|-------|-------|------------|-----|---------|--------|----------|------------|
-| Chat | — | — | — | — | — | — | — | — |
-| Steer | — | — | — | — | — | — | — | — |
-
----
-
-## Ablation Study 数据（待补充）
-
-| Model | Condition | acc@K | Avg Turns | Completion Time | Interventions |
-|-------|-----------|-------|-----------|-----------------|---------------|
-| Llama-3.1 | Steer-lite (Signals Off) | — | — | — | — |
-| | Steer+SOS (Signals On) | — | — | — | — |
-| DeepSeek | Steer-lite | — | — | — | — |
-| | Steer+SOS | — | — | — | — |
-| Qwen3 | Steer-lite | — | — | — | — |
-| | Steer+SOS | — | — | — | — |
+### Phase 5: CD 两轮实验
+- CD 第一轮：C0 → C0 Acc@1/K
+- CD 第二轮：C0+C1 → C1 Acc@2/K

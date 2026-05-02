@@ -41,16 +41,11 @@ def render_token_stream_inline(token_data, selected_idx):
             transition: all 0.15s ease;
             position: relative;
         }
-        /* SOS-based coloring: gradient from green (safe) to red (high SOS) */
-        .token-span.sos-0 { background-color: rgba(76, 175, 80, 0.15); }
-        .token-span.sos-1 { background-color: rgba(139, 195, 74, 0.2); }
-        .token-span.sos-2 { background-color: rgba(205, 220, 57, 0.25); }
-        .token-span.sos-3 { background-color: rgba(255, 235, 59, 0.3); }
-        .token-span.sos-4 { background-color: rgba(255, 193, 7, 0.35); }
-        .token-span.sos-5 { background-color: rgba(255, 152, 0, 0.4); }
-        .token-span.sos-6 { background-color: rgba(255, 87, 34, 0.45); }
-        .token-span.sos-7 { background-color: rgba(244, 67, 54, 0.5); }
-        .token-span.sos-high { background-color: rgba(244, 67, 54, 0.55); border-bottom: 2px solid #f44336; }
+        /* Prob-based coloring: white (high prob) → green → yellow → red (low prob) */
+        .token-span.prob-white { background-color: rgba(255, 255, 255, 0.6); }
+        .token-span.prob-green { background-color: rgba(180, 230, 200, 0.45); }
+        .token-span.prob-yellow { background-color: rgba(255, 255, 160, 0.45); }
+        .token-span.prob-red { background-color: rgba(255, 180, 180, 0.5); }
 
         /* Critical flag override */
         .token-span.critical { border-bottom: 2px solid #e91e63; }
@@ -141,9 +136,10 @@ def render_token_stream_inline(token_data, selected_idx):
     legend = textwrap.dedent("""
     <div class="sos-legend">
         <span>SOS Level:</span>
-        <div class="sos-legend-item"><div class="sos-color-box sos-0" style="background-color: rgba(76, 175, 80, 0.3);"></div> Low</div>
-        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(255, 235, 59, 0.4);"></div> Medium</div>
-        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(244, 67, 54, 0.5);"></div> High</div>
+        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(255, 255, 255, 0.6); border: 1px solid #ddd;"></div> Normal</div>
+        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(180, 230, 200, 0.45);"></div> Low</div>
+        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(255, 255, 160, 0.45);"></div> Medium</div>
+        <div class="sos-legend-item"><div class="sos-color-box" style="background-color: rgba(255, 180, 180, 0.5);"></div> High</div>
         <span style="margin-left: 12px;">|</span>
         <div class="sos-legend-item"><div style="width:14px; height:14px; border-bottom: 2px solid #e91e63; border-radius: 3px;"></div> Critical</div>
         <div class="sos-legend-item"><div style="width:14px; height:14px; border-bottom: 2px dashed #2196f3; border-radius: 3px;"></div> New</div>
@@ -161,28 +157,15 @@ def render_token_stream_inline(token_data, selected_idx):
         is_new = item.get('is_new', False)
         is_selected = (idx == selected_idx)
 
-        # Use real SOS score if available, otherwise fall back to prob-based estimate
-        sos_score = item.get('sos_score')
-        if sos_score is not None:
-            sos_level = int(min(7, sos_score * 7))
+        # Map prob to color class (high prob = white, low prob = red)
+        if prob >= 0.75:
+            prob_class = "prob-white"
+        elif prob >= 0.5:
+            prob_class = "prob-green"
+        elif prob >= 0.25:
+            prob_class = "prob-yellow"
         else:
-            # Fallback: prob-based proxy (deprecated)
-            if prob > 0.3:
-                sos_level = 0
-            elif prob > 0.15:
-                sos_level = 1
-            elif prob > 0.08:
-                sos_level = 2
-            elif prob > 0.04:
-                sos_level = 3
-            elif prob > 0.02:
-                sos_level = 4
-            elif prob > 0.01:
-                sos_level = 5
-            elif prob > 0.005:
-                sos_level = 6
-            else:
-                sos_level = 7
+            prob_class = "prob-red"
 
         # Escape HTML
         safe_token = token_text.replace("<", "&lt;").replace(">", "&gt;")
@@ -192,7 +175,7 @@ def render_token_stream_inline(token_data, selected_idx):
             continue
 
         # Build classes
-        classes = [f"sos-{min(sos_level, 7)}"]
+        classes = [prob_class]
         if is_critical:
             classes.append("critical")
         if is_selected:
