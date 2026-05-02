@@ -870,7 +870,18 @@ if 'model' in st.session_state:
 
                                             st.session_state['trace'] = new_trace
                                             st.session_state['analysis'] = new_analysis
-                                            # Compute SOS only for new tokens (from selected_idx onwards)
+                                            # Recompute probabilities for new tokens
+                                            last_layer = max(new_trace.tokenlist[0].hidden_states.keys())
+                                            for token_rec in new_trace.tokenlist:
+                                                hs = token_rec.hidden_states.get(last_layer)
+                                                if hs is not None:
+                                                    lens = session.controller._decode_hidden_state(hs.get_value(), top_k=10)
+                                                    top_tokens = [tok for tok, _ in lens]
+                                                    top_probs = [prob for _, prob in lens]
+                                                    token_rec.prob = top_probs[top_tokens.index(token_rec.token)] if token_rec.token in top_tokens else (top_probs[0] if top_probs else 0.01)
+                                                else:
+                                                    token_rec.prob = 0.01
+                                            # Compute SOS only for new tokens
                                             analyzer = TraceAnalysis(new_trace, session.controller.model, session.controller.tokenizer)
                                             new_sos = analyzer.compute_sos_scores(start_idx=selected_idx)
                                             st.session_state['sos_scores'] = new_sos
@@ -902,7 +913,18 @@ if 'model' in st.session_state:
 
                                                 st.session_state['trace'] = new_trace
                                                 st.session_state['analysis'] = new_analysis
-                                                # Compute SOS only for new tokens (from selected_idx onwards)
+                                                # Recompute probabilities for new tokens
+                                                last_layer = max(new_trace.tokenlist[0].hidden_states.keys())
+                                                for token_rec in new_trace.tokenlist:
+                                                    hs = token_rec.hidden_states.get(last_layer)
+                                                    if hs is not None:
+                                                        lens = session.controller._decode_hidden_state(hs.get_value(), top_k=10)
+                                                        top_tokens = [tok for tok, _ in lens]
+                                                        top_probs = [prob for _, prob in lens]
+                                                        token_rec.prob = top_probs[top_tokens.index(token_rec.token)] if token_rec.token in top_tokens else (top_probs[0] if top_probs else 0.01)
+                                                    else:
+                                                        token_rec.prob = 0.01
+                                                # Compute SOS only for new tokens
                                                 analyzer = TraceAnalysis(new_trace, session.controller.model, session.controller.tokenizer)
                                                 new_sos = analyzer.compute_sos_scores(start_idx=selected_idx)
                                                 st.session_state['sos_scores'] = new_sos
@@ -1139,14 +1161,18 @@ if 'model' in st.session_state:
                 # Recompute token probabilities from stored hidden states using Logit Lens approach
                 if trace.tokenlist:
                     last_layer = max(trace.tokenlist[0].hidden_states.keys())
-                    for token_rec in trace.tokenlist:
+                    for idx, token_rec in enumerate(trace.tokenlist):
                         token_str = token_rec.token
                         hs = token_rec.hidden_states.get(last_layer)
                         if hs is not None:
                             lens = session.controller._decode_hidden_state(hs.get_value(), top_k=10)
                             top_tokens = [tok for tok, _ in lens]
                             top_probs = [prob for _, prob in lens]
-                            token_rec.prob = top_probs[top_tokens.index(token_str)] if token_str in top_tokens else 0.0
+                            # If token is in top-10, use its exact prob; otherwise use top-1 as proxy
+                            if token_str in top_tokens:
+                                token_rec.prob = top_probs[top_tokens.index(token_str)]
+                            else:
+                                token_rec.prob = top_probs[0] if top_probs else 0.01
                         else:
                             token_rec.prob = 0.01
 

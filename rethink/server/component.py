@@ -47,8 +47,7 @@ def render_token_stream_inline(token_data, selected_idx):
         .token-span.prob-yellow { background-color: rgba(255, 255, 160, 0.45); }
         .token-span.prob-red { background-color: rgba(255, 180, 180, 0.5); }
 
-        /* Critical flag override */
-        .token-span.critical { border-bottom: 2px solid #e91e63; }
+        /* Critical flag override - hidden */
 
         /* Selected state */
         .token-span.selected {
