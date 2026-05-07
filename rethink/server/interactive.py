@@ -108,7 +108,7 @@ class InteractiveSession:
             terminators.append(self.controller.tokenizer.convert_tokens_to_ids("<|im_end|>"))
         return terminators
 
-    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128, stream_callback=None, **kwargs):
+    def run_initial_inference(self, prompt_text, use_template=True, max_new_tokens=128, stream_callback=None, track_hidden=True, **kwargs):
         """
         Run the initial inference to get the baseline trace.
 
@@ -131,13 +131,13 @@ class InteractiveSession:
             prompt=final_prompt,
             generation_kwargs=gen_kwargs,
             stream_callback=stream_callback,
-            track_hidden=True,
+            track_hidden=track_hidden,
         )
 
         generated_text = "".join([t.token for t in trace_pack.token_logprobs])
         self.current_trace = self.controller._tracepack_to_trace_recorder(trace_pack, final_prompt, generated_text)
 
-        self._analyze_trace()
+        self._analyze_trace(deep=track_hidden)
         return self.current_trace, self.analysis_results
 
     def rethink_from_step(self, trace_recorder, step_idx, max_new_tokens=128, force_token=None, steering_prompt: Optional[str] = None):
@@ -310,8 +310,11 @@ class InteractiveSession:
         self._analyze_trace()
         return self.current_trace, self.analysis_results
 
-    def _analyze_trace(self):
+    def _analyze_trace(self, deep=True):
         if self.current_trace:
+            if not deep:
+                self.analysis_results = []
+                return
             analyzer = TraceAnalysis(
                 trace=self.current_trace,
                 model=self.controller.model,

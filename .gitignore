@@ -32,3 +32,5 @@ outputs/
 *.jsonl
 *.log
 *.json
+!experiments/revision/data/
+!experiments/revision/data/staged_cases.json

@@ -10,6 +10,7 @@ import datasets
 import torch
 import uuid
 import json
+import gc
 from datetime import datetime
 
 # Add the root directory to sys.path
@@ -522,6 +523,11 @@ with st.sidebar.expander("⚙️ Generation Parameters", expanded=False):
         hide_think_for_display = st.checkbox(
             "Hide <think>", value=True
         )
+        fast_generation_mode = st.checkbox(
+            "Fast generation",
+            value=True,
+            help="Skip full hidden-state/SOS precomputation during generation; compute token analysis lazily after a token is selected."
+        )
         gen_cfg_data.update({
             "repetition_penalty": repetition_penalty,
             "no_repeat_ngram_size": no_repeat_ngram_size
@@ -598,12 +604,31 @@ st.sidebar.caption("Logs saved to outputs/interactive_sessions/")
 # Model Loading
 # ============================================================================
 model_cfg_errors = [] if not model_path else []
+if 'model' in st.session_state:
+    loaded_path = st.session_state.get("loaded_model_path", "unknown")
+    st.sidebar.caption(f"Loaded: {os.path.basename(str(loaded_path))}")
+    if st.sidebar.button("Unload Model"):
+        for key in ["model", "tokenizer", "interactive_session", "trace", "analysis", "analysis_obj"]:
+            st.session_state.pop(key, None)
+        st.cache_resource.clear()
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        st.rerun()
+
 if st.sidebar.button("🚀 Load Model", disabled=bool(model_cfg_errors)):
     try:
         with st.status("Loading model resources...", expanded=True) as status:
             st.write("Initializing Session Manager...")
 
             st.write(f"Loading model weights from {model_path}...")
+            if st.session_state.get("loaded_model_path") != model_path:
+                for key in ["model", "tokenizer", "interactive_session", "trace", "analysis", "analysis_obj"]:
+                    st.session_state.pop(key, None)
+                st.cache_resource.clear()
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
             model, tokenizer = SessionManager.get_resources(model_path, model_cfg_data)
 
             st.write("Initializing interactive session...")
@@ -612,6 +637,7 @@ if st.sidebar.button("🚀 Load Model", disabled=bool(model_cfg_errors)):
 
             st.session_state['model'] = model
             st.session_state['tokenizer'] = tokenizer
+            st.session_state['loaded_model_path'] = model_path
             st.session_state['interactive_session'] = InteractiveSession(model, tokenizer, experiment_logger=experiment_logger)
             # Reset model-coupled runtime state after switching model to avoid stale traces.
             st.session_state['messages'] = []
@@ -1124,6 +1150,7 @@ if 'model' in st.session_state:
                     full_prompt_str,
                     use_template=False,  # We already applied the template
                     stream_callback=token_stream_callback,
+                    track_hidden=not fast_generation_mode,
                     **gen_cfg_data,
                 )
 
@@ -1153,13 +1180,16 @@ if 'model' in st.session_state:
                     display_response = strip_think_content(display_response).strip()
                 
                 live_stream_placeholder.markdown(display_response)
-                from rethink.analysis.trace_analysis import TraceAnalysis
-                trace_analyzer = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
-                sos_scores = trace_analyzer.compute_sos_scores()
+                if fast_generation_mode:
+                    sos_scores = [0.0] * len(trace.tokenlist)
+                else:
+                    from rethink.analysis.trace_analysis import TraceAnalysis
+                    trace_analyzer = TraceAnalysis(trace, session.controller.model, session.controller.tokenizer)
+                    sos_scores = trace_analyzer.compute_sos_scores()
                 st.session_state['sos_scores'] = sos_scores
 
                 # Recompute token probabilities from stored hidden states using Logit Lens approach
-                if trace.tokenlist:
+                if trace.tokenlist and trace.tokenlist[0].hidden_states:
                     last_layer = max(trace.tokenlist[0].hidden_states.keys())
                     for idx, token_rec in enumerate(trace.tokenlist):
                         token_str = token_rec.token

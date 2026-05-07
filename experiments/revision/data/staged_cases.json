@@ -1,0 +1,3638 @@
+{
+  "meta": {
+    "max_turns": 8,
+    "description": "staged K=8 taboo/json constraint dataset"
+  },
+  "cases": [
+    {
+      "id": "taboo_stage_001",
+      "type": "taboo",
+      "topic": "a campus recycling notice",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a campus recycling notice. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: trash, waste.",
+          "constraints": {
+            "forbidden_words": [
+              "trash",
+              "waste"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about pilot while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about pilot while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "pilot"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_002",
+      "type": "taboo",
+      "topic": "a lab meeting update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a lab meeting update. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: delay, problem.",
+          "constraints": {
+            "forbidden_words": [
+              "delay",
+              "problem"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about experiment while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about experiment while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "experiment"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_003",
+      "type": "taboo",
+      "topic": "a museum visitor reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a museum visitor reminder. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: ban, rule.",
+          "constraints": {
+            "forbidden_words": [
+              "ban",
+              "rule"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about interactive while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about interactive while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "interactive"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_004",
+      "type": "taboo",
+      "topic": "a community garden invitation",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a community garden invitation. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: cheap, free.",
+          "constraints": {
+            "forbidden_words": [
+              "cheap",
+              "free"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about seasonal while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about seasonal while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "seasonal"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_005",
+      "type": "taboo",
+      "topic": "a software release note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a software release note. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: bug, failure.",
+          "constraints": {
+            "forbidden_words": [
+              "bug",
+              "failure"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about telemetry while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about telemetry while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "telemetry"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_006",
+      "type": "taboo",
+      "topic": "a teacher feedback note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a teacher feedback note. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: wrong, bad.",
+          "constraints": {
+            "forbidden_words": [
+              "wrong",
+              "bad"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about reflection while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about reflection while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "reflection"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_007",
+      "type": "taboo",
+      "topic": "a product research memo",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a product research memo. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: market, sales.",
+          "constraints": {
+            "forbidden_words": [
+              "market",
+              "sales"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about fieldwork while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about fieldwork while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "fieldwork"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_008",
+      "type": "taboo",
+      "topic": "a library event announcement",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a library event announcement. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: quiet, book.",
+          "constraints": {
+            "forbidden_words": [
+              "quiet",
+              "book"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about workshop while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about workshop while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "workshop"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_009",
+      "type": "taboo",
+      "topic": "a clinic appointment reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a clinic appointment reminder. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: late, urgent.",
+          "constraints": {
+            "forbidden_words": [
+              "late",
+              "urgent"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about followup while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about followup while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "followup"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_010",
+      "type": "taboo",
+      "topic": "a neighborhood safety update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a neighborhood safety update. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: danger, crime.",
+          "constraints": {
+            "forbidden_words": [
+              "danger",
+              "crime"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about lighting while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about lighting while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "lighting"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_011",
+      "type": "taboo",
+      "topic": "a conference volunteer note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a conference volunteer note. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: busy, mistake.",
+          "constraints": {
+            "forbidden_words": [
+              "busy",
+              "mistake"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about schedule while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about schedule while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "schedule"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_012",
+      "type": "taboo",
+      "topic": "a restaurant allergy notice",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a restaurant allergy notice. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: risk, avoid.",
+          "constraints": {
+            "forbidden_words": [
+              "risk",
+              "avoid"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about ingredient while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about ingredient while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "ingredient"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_013",
+      "type": "taboo",
+      "topic": "a gym class announcement",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a gym class announcement. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: sweat, pain.",
+          "constraints": {
+            "forbidden_words": [
+              "sweat",
+              "pain"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about recovery while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about recovery while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "recovery"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_014",
+      "type": "taboo",
+      "topic": "a remote work guideline",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a remote work guideline. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: mandatory, monitor.",
+          "constraints": {
+            "forbidden_words": [
+              "mandatory",
+              "monitor"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about timezone while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about timezone while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "timezone"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_015",
+      "type": "taboo",
+      "topic": "a parent teacher meeting invite",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a parent teacher meeting invite. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: grade, fail.",
+          "constraints": {
+            "forbidden_words": [
+              "grade",
+              "fail"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about growth while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about growth while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "growth"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_016",
+      "type": "taboo",
+      "topic": "a city park cleanup message",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a city park cleanup message. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: dirty, trash.",
+          "constraints": {
+            "forbidden_words": [
+              "dirty",
+              "trash"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about habitat while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about habitat while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "habitat"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_017",
+      "type": "taboo",
+      "topic": "a product onboarding tip",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a product onboarding tip. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: confusing, error.",
+          "constraints": {
+            "forbidden_words": [
+              "confusing",
+              "error"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about shortcut while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about shortcut while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "shortcut"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_018",
+      "type": "taboo",
+      "topic": "a student club recruitment post",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a student club recruitment post. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: join, free.",
+          "constraints": {
+            "forbidden_words": [
+              "join",
+              "free"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about mentorship while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about mentorship while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "mentorship"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_019",
+      "type": "taboo",
+      "topic": "a patient wellness reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a patient wellness reminder. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: illness, doctor.",
+          "constraints": {
+            "forbidden_words": [
+              "illness",
+              "doctor"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about routine while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about routine while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "routine"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_020",
+      "type": "taboo",
+      "topic": "a finance team deadline note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a finance team deadline note. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: cost, penalty.",
+          "constraints": {
+            "forbidden_words": [
+              "cost",
+              "penalty"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about forecast while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about forecast while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "forecast"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_021",
+      "type": "taboo",
+      "topic": "a travel advisory update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a travel advisory update. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: cancel, delay.",
+          "constraints": {
+            "forbidden_words": [
+              "cancel",
+              "delay"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about route while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about route while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "route"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_022",
+      "type": "taboo",
+      "topic": "a housing maintenance notice",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a housing maintenance notice. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: broken, complaint.",
+          "constraints": {
+            "forbidden_words": [
+              "broken",
+              "complaint"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about inspection while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about inspection while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "inspection"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_023",
+      "type": "taboo",
+      "topic": "a research consent summary",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a research consent summary. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: risk, harm.",
+          "constraints": {
+            "forbidden_words": [
+              "risk",
+              "harm"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about privacy while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about privacy while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "privacy"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_024",
+      "type": "taboo",
+      "topic": "a workshop feedback request",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a workshop feedback request. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: bad, wrong.",
+          "constraints": {
+            "forbidden_words": [
+              "bad",
+              "wrong"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about iteration while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about iteration while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "iteration"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_025",
+      "type": "taboo",
+      "topic": "a customer support reply",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a customer support reply. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: refund, angry.",
+          "constraints": {
+            "forbidden_words": [
+              "refund",
+              "angry"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about option while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about option while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "option"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_026",
+      "type": "taboo",
+      "topic": "a hiring panel reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a hiring panel reminder. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: reject, bias.",
+          "constraints": {
+            "forbidden_words": [
+              "reject",
+              "bias"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about rubric while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about rubric while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "rubric"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_027",
+      "type": "taboo",
+      "topic": "a cafeteria menu update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a cafeteria menu update. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: cheap, diet.",
+          "constraints": {
+            "forbidden_words": [
+              "cheap",
+              "diet"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about seasonal while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about seasonal while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "seasonal"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_028",
+      "type": "taboo",
+      "topic": "a data privacy announcement",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a data privacy announcement. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: breach, leak.",
+          "constraints": {
+            "forbidden_words": [
+              "breach",
+              "leak"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about audit while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about audit while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "audit"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_029",
+      "type": "taboo",
+      "topic": "a lab equipment booking note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a lab equipment booking note. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: damage, miss.",
+          "constraints": {
+            "forbidden_words": [
+              "damage",
+              "miss"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about calibration while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about calibration while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "calibration"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "taboo_stage_030",
+      "type": "taboo",
+      "topic": "a community arts invitation",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a short paragraph about a community arts invitation. Aim for 50-100 words and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words: ticket, sell.",
+          "constraints": {
+            "forbidden_words": [
+              "ticket",
+              "sell"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make the tone gentle and tactful, as if giving careful advice.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Prefer polite markers such as please/could/would."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about collaboration while preserving the earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "first_half",
+            "modify_scope": "second_half",
+            "dynamic_goal": "Revise only the latter part so it becomes more exploratory and constructive, adding a concrete future-facing angle about collaboration while preserving the earlier compliant content.",
+            "anchor_terms": [
+              "collaboration"
+            ],
+            "judge_rubric": [
+              "The first half remains broadly consistent with the earlier answer and does not introduce forbidden words.",
+              "The second half meaningfully addresses the new dynamic goal rather than merely appending a keyword.",
+              "The revision is local: it should not unnecessarily rewrite the whole answer.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/tactful tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_001",
+      "type": "json",
+      "topic": "a study plan",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a study plan. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, summary, next_step.",
+          "constraints": {
+            "keys": [
+              "title",
+              "summary",
+              "next_step"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: hard, fail.",
+          "constraints": {
+            "forbidden_words": [
+              "hard",
+              "fail"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about revision, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about revision, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "revision"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_002",
+      "type": "json",
+      "topic": "a design review",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a design review. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, strength, risk.",
+          "constraints": {
+            "keys": [
+              "title",
+              "strength",
+              "risk"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: ugly, broken.",
+          "constraints": {
+            "forbidden_words": [
+              "ugly",
+              "broken"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about prototype, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about prototype, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "prototype"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_003",
+      "type": "json",
+      "topic": "a field report",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a field report. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, finding, follow_up.",
+          "constraints": {
+            "keys": [
+              "title",
+              "finding",
+              "follow_up"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: error, bad.",
+          "constraints": {
+            "forbidden_words": [
+              "error",
+              "bad"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about survey, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about survey, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "survey"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_004",
+      "type": "json",
+      "topic": "a reading list",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a reading list. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, audience, recommendation.",
+          "constraints": {
+            "keys": [
+              "title",
+              "audience",
+              "recommendation"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: boring, easy.",
+          "constraints": {
+            "forbidden_words": [
+              "boring",
+              "easy"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about annotation, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about annotation, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "annotation"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_005",
+      "type": "json",
+      "topic": "a lab safety note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a lab safety note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, reminder, support.",
+          "constraints": {
+            "keys": [
+              "title",
+              "reminder",
+              "support"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: danger, must.",
+          "constraints": {
+            "forbidden_words": [
+              "danger",
+              "must"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about practice, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about practice, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "practice"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_006",
+      "type": "json",
+      "topic": "a workshop plan",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a workshop plan. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, goal, activity.",
+          "constraints": {
+            "keys": [
+              "title",
+              "goal",
+              "activity"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: mandatory, simple.",
+          "constraints": {
+            "forbidden_words": [
+              "mandatory",
+              "simple"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about feedback, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about feedback, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "feedback"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_007",
+      "type": "json",
+      "topic": "a grant idea",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a grant idea. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, rationale, next_step.",
+          "constraints": {
+            "keys": [
+              "title",
+              "rationale",
+              "next_step"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: money, guarantee.",
+          "constraints": {
+            "forbidden_words": [
+              "money",
+              "guarantee"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about pilot, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about pilot, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "pilot"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_008",
+      "type": "json",
+      "topic": "a model evaluation note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a model evaluation note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, metric, concern.",
+          "constraints": {
+            "keys": [
+              "title",
+              "metric",
+              "concern"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: score, win.",
+          "constraints": {
+            "forbidden_words": [
+              "score",
+              "win"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about robustness, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about robustness, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "robustness"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_009",
+      "type": "json",
+      "topic": "a clinic reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a clinic reminder. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, message, next_step.",
+          "constraints": {
+            "keys": [
+              "title",
+              "message",
+              "next_step"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: urgent, late.",
+          "constraints": {
+            "forbidden_words": [
+              "urgent",
+              "late"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about followup, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about followup, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "followup"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_010",
+      "type": "json",
+      "topic": "a safety update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a safety update. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, focus, action.",
+          "constraints": {
+            "keys": [
+              "title",
+              "focus",
+              "action"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: danger, crime.",
+          "constraints": {
+            "forbidden_words": [
+              "danger",
+              "crime"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about lighting, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about lighting, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "lighting"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_011",
+      "type": "json",
+      "topic": "a volunteer brief",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a volunteer brief. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, role, support.",
+          "constraints": {
+            "keys": [
+              "title",
+              "role",
+              "support"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: busy, mistake.",
+          "constraints": {
+            "forbidden_words": [
+              "busy",
+              "mistake"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about schedule, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about schedule, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "schedule"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_012",
+      "type": "json",
+      "topic": "an allergy notice",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing an allergy notice. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, guest_note, staff_action.",
+          "constraints": {
+            "keys": [
+              "title",
+              "guest_note",
+              "staff_action"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: risk, avoid.",
+          "constraints": {
+            "forbidden_words": [
+              "risk",
+              "avoid"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about ingredient, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about ingredient, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "ingredient"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_013",
+      "type": "json",
+      "topic": "a fitness class note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a fitness class note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, benefit, reminder.",
+          "constraints": {
+            "keys": [
+              "title",
+              "benefit",
+              "reminder"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: sweat, pain.",
+          "constraints": {
+            "forbidden_words": [
+              "sweat",
+              "pain"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about recovery, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about recovery, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "recovery"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_014",
+      "type": "json",
+      "topic": "a remote work note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a remote work note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, practice, consideration.",
+          "constraints": {
+            "keys": [
+              "title",
+              "practice",
+              "consideration"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: mandatory, monitor.",
+          "constraints": {
+            "forbidden_words": [
+              "mandatory",
+              "monitor"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about timezone, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about timezone, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "timezone"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_015",
+      "type": "json",
+      "topic": "a family meeting note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a family meeting note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, purpose, encouragement.",
+          "constraints": {
+            "keys": [
+              "title",
+              "purpose",
+              "encouragement"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: grade, fail.",
+          "constraints": {
+            "forbidden_words": [
+              "grade",
+              "fail"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about growth, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about growth, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "growth"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_016",
+      "type": "json",
+      "topic": "a park cleanup brief",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a park cleanup brief. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, task, impact.",
+          "constraints": {
+            "keys": [
+              "title",
+              "task",
+              "impact"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: dirty, trash.",
+          "constraints": {
+            "forbidden_words": [
+              "dirty",
+              "trash"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about habitat, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about habitat, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "habitat"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_017",
+      "type": "json",
+      "topic": "an onboarding hint",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing an onboarding hint. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, tip, example.",
+          "constraints": {
+            "keys": [
+              "title",
+              "tip",
+              "example"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: confusing, error.",
+          "constraints": {
+            "forbidden_words": [
+              "confusing",
+              "error"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about shortcut, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about shortcut, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "shortcut"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_018",
+      "type": "json",
+      "topic": "a club outreach note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a club outreach note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, audience, invitation.",
+          "constraints": {
+            "keys": [
+              "title",
+              "audience",
+              "invitation"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: join, free.",
+          "constraints": {
+            "forbidden_words": [
+              "join",
+              "free"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about mentorship, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about mentorship, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "mentorship"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_019",
+      "type": "json",
+      "topic": "a wellness reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a wellness reminder. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, habit, support.",
+          "constraints": {
+            "keys": [
+              "title",
+              "habit",
+              "support"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: illness, doctor.",
+          "constraints": {
+            "forbidden_words": [
+              "illness",
+              "doctor"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about routine, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about routine, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "routine"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_020",
+      "type": "json",
+      "topic": "a finance deadline note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a finance deadline note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, deadline, preparation.",
+          "constraints": {
+            "keys": [
+              "title",
+              "deadline",
+              "preparation"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: cost, penalty.",
+          "constraints": {
+            "forbidden_words": [
+              "cost",
+              "penalty"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about forecast, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about forecast, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "forecast"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_021",
+      "type": "json",
+      "topic": "a travel update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a travel update. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, status, suggestion.",
+          "constraints": {
+            "keys": [
+              "title",
+              "status",
+              "suggestion"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: cancel, delay.",
+          "constraints": {
+            "forbidden_words": [
+              "cancel",
+              "delay"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about route, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about route, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "route"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_022",
+      "type": "json",
+      "topic": "a maintenance notice",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a maintenance notice. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, scope, resident_action.",
+          "constraints": {
+            "keys": [
+              "title",
+              "scope",
+              "resident_action"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: broken, complaint.",
+          "constraints": {
+            "forbidden_words": [
+              "broken",
+              "complaint"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about inspection, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about inspection, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "inspection"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_023",
+      "type": "json",
+      "topic": "a consent summary",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a consent summary. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, participant_note, privacy_note.",
+          "constraints": {
+            "keys": [
+              "title",
+              "participant_note",
+              "privacy_note"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: risk, harm.",
+          "constraints": {
+            "forbidden_words": [
+              "risk",
+              "harm"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about privacy, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about privacy, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "privacy"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_024",
+      "type": "json",
+      "topic": "a feedback request",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a feedback request. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, question, next_step.",
+          "constraints": {
+            "keys": [
+              "title",
+              "question",
+              "next_step"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: bad, wrong.",
+          "constraints": {
+            "forbidden_words": [
+              "bad",
+              "wrong"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about iteration, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about iteration, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "iteration"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_025",
+      "type": "json",
+      "topic": "a support response",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a support response. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, acknowledgment, option.",
+          "constraints": {
+            "keys": [
+              "title",
+              "acknowledgment",
+              "option"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: refund, angry.",
+          "constraints": {
+            "forbidden_words": [
+              "refund",
+              "angry"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about option, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about option, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "option"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_026",
+      "type": "json",
+      "topic": "a hiring reminder",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a hiring reminder. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, criterion, process_note.",
+          "constraints": {
+            "keys": [
+              "title",
+              "criterion",
+              "process_note"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: reject, bias.",
+          "constraints": {
+            "forbidden_words": [
+              "reject",
+              "bias"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about rubric, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about rubric, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "rubric"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_027",
+      "type": "json",
+      "topic": "a menu update",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a menu update. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, highlight, note.",
+          "constraints": {
+            "keys": [
+              "title",
+              "highlight",
+              "note"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: cheap, diet.",
+          "constraints": {
+            "forbidden_words": [
+              "cheap",
+              "diet"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about seasonal, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about seasonal, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "seasonal"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_028",
+      "type": "json",
+      "topic": "a privacy announcement",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing a privacy announcement. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, practice, review.",
+          "constraints": {
+            "keys": [
+              "title",
+              "practice",
+              "review"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: breach, leak.",
+          "constraints": {
+            "forbidden_words": [
+              "breach",
+              "leak"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about audit, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about audit, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "audit"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_029",
+      "type": "json",
+      "topic": "an equipment booking note",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing an equipment booking note. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, usage, care.",
+          "constraints": {
+            "keys": [
+              "title",
+              "usage",
+              "care"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: damage, miss.",
+          "constraints": {
+            "forbidden_words": [
+              "damage",
+              "miss"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about calibration, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about calibration, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "calibration"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "json_stage_030",
+      "type": "json",
+      "topic": "an arts invitation",
+      "stages": [
+        {
+          "k": 1,
+          "type": "base",
+          "instruction": "Write a compact JSON object summarizing an arts invitation. Aim for 50-100 words total and stay under 200 words.",
+          "constraints": {
+            "guidance_only": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "json",
+          "instruction": "Return only valid JSON with exactly these keys: title, audience, collaboration.",
+          "constraints": {
+            "keys": [
+              "title",
+              "audience",
+              "collaboration"
+            ],
+            "no_extra_keys": true
+          }
+        },
+        {
+          "k": 2,
+          "type": "taboo",
+          "instruction": "Do not use these words anywhere in the JSON values: ticket, sell.",
+          "constraints": {
+            "forbidden_words": [
+              "ticket",
+              "sell"
+            ]
+          }
+        },
+        {
+          "k": 3,
+          "type": "tone",
+          "instruction": "Make every string value polite and considerate.",
+          "constraints": {
+            "polite": true
+          },
+          "cd_proxy": "Constrained decoding can only bias toward polite tokens, not guarantee tone."
+        },
+        {
+          "k": 4,
+          "type": "dynamic",
+          "instruction": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about collaboration, while preserving the required JSON keys and earlier compliant content.",
+          "dynamic": {
+            "preserve_scope": "earlier_json_fields",
+            "modify_scope": "later_json_values",
+            "dynamic_goal": "Revise only the latter part of the JSON values so they add a constructive exploratory detail about collaboration, while preserving the required JSON keys and earlier compliant content.",
+            "anchor_terms": [
+              "collaboration"
+            ],
+            "judge_rubric": [
+              "The output remains valid JSON with exactly the required keys.",
+              "Earlier fields remain broadly compliant instead of being unnecessarily rewritten.",
+              "Later JSON values meaningfully address the new dynamic goal rather than merely appending a keyword.",
+              "The answer still satisfies the active k=2 forbidden-word constraint and k=3 polite/considerate tone constraint."
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,39 +1,30 @@
-# Rethink Project To-Do List
+# Revision To-Do
 
-## 🚀 To-Do List (Steerability Pivot)
+## Experiment Code
 
-### 1. Data & Infrastructure (IFEval/Taboo)
-- [x] **Task Set Generation:** Created `dataset/ifeval/taskset_120.json` with 60 Taboo and 60 JSON tasks.
-- [ ] **Implement Checkers:** Create `dataset/ifeval/checkers.py`.
-    - `TabooChecker`: Regex-based word boundary check.
-    - `JsonChecker`: `json.loads` + key existence check.
-- [ ] **Unit Test Checkers:** Verify checkers against known pass/fail examples.
+- [x] Build staged K=8 dataset generator.
+- [x] Implement stage-aware prompts.
+- [x] Implement checker for base, taboo, JSON, tone proxy, and dynamic constraints.
+- [x] Implement `reflexion.py`.
+- [x] Implement `autoLR.py`.
+- [x] Implement `constraint_decoding.py`.
+- [x] Implement `chat.py`.
+- [x] Implement `steer.py`.
+- [x] Implement `steer_lite.py`.
+- [x] Implement unified `run_exp.sh`.
+- [x] Implement `score.py`.
 
-### 2. App Integration (Human Study)
-- [ ] **Task Loader:** Modify `app.py` to read from `taskset_120.json`.
-- [ ] **State Management:** Add session state for `current_task_index`, `task_start_time`, `attempts`.
-- [ ] **Checker UI:**
-    - Add a visual indicator (Green Check / Red X) for the current output.
-    - Show specific error messages (e.g., "Found forbidden word: 'apple'", "Invalid JSON: missing key 'response'").
-- [ ] **Logging Update:** Ensure `outputs/interactive_sessions/` logs include:
-    - Task ID.
-    - Condition (Chat vs. Rethink).
-    - Time stamps for every action.
-    - Final Pass/Fail status.
+## Next Experimental Pass
 
-### 3. Automated Simulation (RQ1)
-- [ ] **Reflexion Baseline Script:** `experiments/ifeval/run_reflexion.py`.
-    - Loop: Generate -> Check -> If Fail, Prompt with Error -> Retry (Max K times).
-- [ ] **Rethink Simulation Script:** `experiments/ifeval/run_rethink_simulation.py`.
-    - Loop: Generate -> Check -> If Fail, Truncate to error index -> Force/Ban token -> Continue.
-- [ ] **Metric Calculation:** Script to parse logs and compute CSR and TSR.
+- [ ] Expand `data/staged_cases.json` from the current pilot-sized set to the final paper-sized set.
+- [ ] Decide whether K=4 dynamic checks should use heuristic-only, LLM judge, or both.
+- [ ] Run all methods on the target model list.
+- [ ] Aggregate outputs into paper tables.
+- [ ] Compare chat, steer, and steer-lite under the same simulated inspection-time assumptions.
 
-### 4. Human Study Execution (RQ2)
-- [ ] **Pilot Run:** Test the app with 1-2 internal users to verify flow.
-- [ ] **Recruitment:** Gather N=12 participants.
-- [ ] **Data Collection:** Run sessions and collect logs.
-- [ ] **Analysis:** Compare Time-to-Success and CSR between conditions.
+## App
 
-### 5. Paper Writing
-- [ ] **Methodology:** Describe the "Glass-box Steering" vs "Black-box Prompting" paradigm.
-- [ ] **Results:** Fill in the tables defined in `experiment.md`.
+- [x] Add fast generation path to avoid full hidden-state/SOS precompute on every generation.
+- [x] Add explicit model unload and CUDA cache cleanup.
+- [ ] Add a dedicated Revision Staged dataset loader in the UI if human-study tasks move fully to the new dataset.
+
